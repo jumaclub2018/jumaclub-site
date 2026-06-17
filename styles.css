@@ -201,10 +201,6 @@ p { font-size: 1.05rem; line-height: 1.7; }
 }
 .mobile-menu a:last-child { border-bottom: none; }
 
-/* Мобильная плашка скрыта по умолчанию, десктопная видна */
-.hero-locations--mob  { display: none; }
-.hero-locations--desk { display: inline-flex; }
-
 /* ===== HERO ===== */
 .hero {
   padding-top: 120px;
@@ -224,6 +220,8 @@ p { font-size: 1.05rem; line-height: 1.7; }
 }
 
 .hero-locations {
+  grid-column: 1;
+  grid-row: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -234,7 +232,7 @@ p { font-size: 1.05rem; line-height: 1.7; }
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.06em;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 .hero-locations::before {
   content: '';
@@ -247,11 +245,12 @@ p { font-size: 1.05rem; line-height: 1.7; }
 .hero-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 60px;
-  align-items: center;
+  column-gap: 60px;
+  row-gap: 0;
+  align-items: start;
 }
 
-.hero-content { max-width: 560px; }
+.hero-content { grid-column: 1; grid-row: 2; max-width: 560px; }
 
 .hero h1 { color: var(--navy); margin-bottom: 20px; }
 .hero h1 span { color: var(--accent); }
@@ -306,6 +305,9 @@ p { font-size: 1.05rem; line-height: 1.7; }
 .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
 
 .hero-image {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
   position: relative;
 }
 
@@ -1096,16 +1098,14 @@ p { font-size: 1.05rem; line-height: 1.7; }
   .nav-burger { display: flex; }
 
   .hero { padding-top: 96px; padding-bottom: 52px; }
-  .hero-layout { grid-template-columns: 1fr; gap: 28px; }
-  .hero-image { order: -1; max-width: 480px; margin: 0 auto; width: 100%; }
+  .hero-layout { grid-template-columns: 1fr; column-gap: 0; row-gap: 20px; align-items: start; }
+  .hero-locations { grid-column: 1; grid-row: 1; margin-bottom: 0; }
+  .hero-image { grid-column: 1; grid-row: 2; max-width: 100%; margin: 0 auto; width: 100%; }
+  .hero-content { grid-column: 1; grid-row: 3; }
 
-  /* Фото — портретное 2:3, показываем без обрезки людей */
-  .hero-photo-wrap { aspect-ratio: 2/3; }
-  .hero-photo-wrap img { object-position: center center; }
-
-  /* Плашка городов: на мобильном — отдельная над фото, внутри content — скрыта */
-  .hero-locations--mob  { display: inline-flex; margin-bottom: 16px; }
-  .hero-locations--desk { display: none; }
+  /* Фото — показываем целиком без обрезки */
+  .hero-photo-wrap { aspect-ratio: unset; }
+  .hero-photo-wrap img { height: auto; object-fit: unset; }
 
   .age-groups { grid-template-columns: 1fr 1fr; }
 
