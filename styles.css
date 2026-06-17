@@ -201,6 +201,10 @@ p { font-size: 1.05rem; line-height: 1.7; }
 }
 .mobile-menu a:last-child { border-bottom: none; }
 
+/* Мобильная плашка скрыта по умолчанию, десктопная видна */
+.hero-locations--mob  { display: none; }
+.hero-locations--desk { display: inline-flex; }
+
 /* ===== HERO ===== */
 .hero {
   padding-top: 120px;
@@ -1092,9 +1096,16 @@ p { font-size: 1.05rem; line-height: 1.7; }
   .nav-burger { display: flex; }
 
   .hero { padding-top: 96px; padding-bottom: 52px; }
-  .hero-layout { grid-template-columns: 1fr; gap: 36px; }
-  .hero-image { order: -1; max-width: 400px; margin: 0 auto; width: 100%; }
-  .hero-photo-wrap { aspect-ratio: 3/2; }
+  .hero-layout { grid-template-columns: 1fr; gap: 28px; }
+  .hero-image { order: -1; max-width: 480px; margin: 0 auto; width: 100%; }
+
+  /* Фото — портретное 2:3, показываем без обрезки людей */
+  .hero-photo-wrap { aspect-ratio: 2/3; }
+  .hero-photo-wrap img { object-position: center center; }
+
+  /* Плашка городов: на мобильном — отдельная над фото, внутри content — скрыта */
+  .hero-locations--mob  { display: inline-flex; margin-bottom: 16px; }
+  .hero-locations--desk { display: none; }
 
   .age-groups { grid-template-columns: 1fr 1fr; }
 
