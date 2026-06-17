@@ -1,0 +1,15 @@
+node_modules/
+.env
+.DS_Store
+
+# Оригиналы фото не нужны на сервере — только WebP в images/webp/
+images/*.jpg
+images/*.JPG
+images/*.JPEG
+images/*.jpeg
+images/*.png
+images/*.PNG
+images/*.HEIC
+images/*.heic
+images/*.webp
+images/originals/
