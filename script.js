@@ -71,6 +71,30 @@ document.querySelectorAll('.faq-q').forEach(btn => {
   });
 });
 
+// ── Phone mask +7 (XXX) XXX-XX-XX ────────────────────────────────────────────
+function applyPhoneMask(input) {
+  input.addEventListener('input', () => {
+    let digits = input.value.replace(/\D/g, '');
+    if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+    if (digits.startsWith('7')) digits = digits.slice(1);
+    digits = digits.slice(0, 10);
+    let masked = '+7';
+    if (digits.length > 0) masked += ' (' + digits.slice(0, 3);
+    if (digits.length >= 4) masked += ') ' + digits.slice(3, 6);
+    if (digits.length >= 7) masked += '-' + digits.slice(6, 8);
+    if (digits.length >= 9) masked += '-' + digits.slice(8, 10);
+    input.value = masked;
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && /\D$/.test(input.value)) {
+      input.value = input.value.replace(/\D+$/, '');
+      e.preventDefault();
+    }
+  });
+}
+
+document.querySelectorAll('[name="phone"]').forEach(applyPhoneMask);
+
 // ── Form submission ───────────────────────────────────────────────────────────
 async function submitForm(form) {
   const nameInput  = form.querySelector('[name="name"]');
@@ -80,9 +104,10 @@ async function submitForm(form) {
 
   const name  = nameInput.value.trim();
   const phone = phoneInput.value.trim();
+  const digits = phone.replace(/\D/g, '');
 
   if (!name)  { nameInput.focus();  return; }
-  if (!phone) { phoneInput.focus(); return; }
+  if (digits.length < 11) { phoneInput.focus(); return; }
 
   submitBtn.disabled = true;
   submitBtn.textContent = 'Отправляем...';
