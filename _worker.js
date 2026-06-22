@@ -23,9 +23,8 @@ export default {
       return new Response(response.body, { status: response.status, headers });
     }
 
-    // HTML — never cache at CDN, always serve fresh from Worker
     const headers = new Headers(response.headers);
-    headers.set('Cache-Control', 'no-store');
+    headers.set('Cache-Control', 'public, max-age=300');
     return new Response(response.body, { status: response.status, headers });
   },
 };
