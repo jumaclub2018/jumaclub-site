@@ -13,12 +13,6 @@ export default {
       });
     }
 
-    // Requests via custom domain route cause env.ASSETS subrequest loops.
-    // Proxy to workers.dev; that invocation sees workers.dev host and calls env.ASSETS directly.
-    if (url.hostname !== 'jumaclub-site.egorzhukov1995.workers.dev') {
-      return fetch('https://jumaclub-site.egorzhukov1995.workers.dev' + url.pathname + url.search);
-    }
-
     return env.ASSETS.fetch(request);
   },
 };
