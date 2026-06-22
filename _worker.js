@@ -1,3 +1,5 @@
+const WORKERS_DEV = 'https://jumaclub-site.egorzhukov1995.workers.dev';
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -13,16 +15,13 @@ export default {
       });
     }
 
-    const response = await env.ASSETS.fetch(request);
-
-    // Cache static assets at the edge for 24h so mobile users don't hit the Worker on every request
+    // Redirect images to workers.dev which bypasses the corrupted CDN cache
     const ext = url.pathname.split('.').pop().toLowerCase();
-    if (['webp', 'jpg', 'jpeg', 'png', 'gif', 'svg', 'css', 'js', 'ico', 'woff', 'woff2'].includes(ext)) {
-      const headers = new Headers(response.headers);
-      headers.set('Cache-Control', 'public, max-age=86400');
-      return new Response(response.body, { status: response.status, headers });
+    if (['webp', 'jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+      return Response.redirect(WORKERS_DEV + url.pathname, 302);
     }
 
+    const response = await env.ASSETS.fetch(request);
     const headers = new Headers(response.headers);
     headers.set('Cache-Control', 'public, max-age=300');
     return new Response(response.body, { status: response.status, headers });
