@@ -23,6 +23,9 @@ export default {
       return new Response(response.body, { status: response.status, headers });
     }
 
-    return response;
+    // HTML — never cache at CDN, always serve fresh from Worker
+    const headers = new Headers(response.headers);
+    headers.set('Cache-Control', 'no-store');
+    return new Response(response.body, { status: response.status, headers });
   },
 };
