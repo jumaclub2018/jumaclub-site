@@ -13,11 +13,12 @@ export default {
       });
     }
 
-    // Rewrite to canonical workers.dev URL with clean headers so ASSETS binding resolves correctly
-    const canonicalUrl = new URL(url.pathname + url.search, 'https://jumaclub-site.egorzhukov1995.workers.dev');
-    return env.ASSETS.fetch(new Request(canonicalUrl.toString(), {
-      method: request.method,
-      headers: { 'Accept': request.headers.get('Accept') || '*/*' },
-    }));
+    // Requests via custom domain route cause env.ASSETS subrequest loops.
+    // Proxy to workers.dev; that invocation sees workers.dev host and calls env.ASSETS directly.
+    if (url.hostname !== 'jumaclub-site.egorzhukov1995.workers.dev') {
+      return fetch('https://jumaclub-site.egorzhukov1995.workers.dev' + url.pathname + url.search);
+    }
+
+    return env.ASSETS.fetch(request);
   },
 };
