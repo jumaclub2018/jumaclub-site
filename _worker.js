@@ -13,6 +13,16 @@ export default {
       });
     }
 
-    return env.ASSETS.fetch(request);
+    const response = await env.ASSETS.fetch(request);
+
+    // Cache static assets at the edge for 24h so mobile users don't hit the Worker on every request
+    const ext = url.pathname.split('.').pop().toLowerCase();
+    if (['webp', 'jpg', 'jpeg', 'png', 'gif', 'svg', 'css', 'js', 'ico', 'woff', 'woff2'].includes(ext)) {
+      const headers = new Headers(response.headers);
+      headers.set('Cache-Control', 'public, max-age=86400');
+      return new Response(response.body, { status: response.status, headers });
+    }
+
+    return response;
   },
 };
