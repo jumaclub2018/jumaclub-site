@@ -1,26 +1,32 @@
-const WORKERS_DEV = 'https://jumaclub-site.egorzhukov1995.workers.dev';
+const RAILWAY = 'https://jumaclub-site-production.up.railway.app';
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname.startsWith('/api/')) {
-      return fetch('https://jumaclub-site-production.up.railway.app' + url.pathname + url.search, {
+    // API and images — proxy to Railway (bypasses corrupted Workers CDN cache)
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/img/') || url.pathname.startsWith('/images/')) {
+      const upstream = await fetch(RAILWAY + url.pathname + url.search, {
         method: request.method,
         headers: {
-          'Content-Type': request.headers.get('Content-Type') || '',
           'Host': 'jumaclub-site-production.up.railway.app',
+          ...(request.method !== 'GET' && request.method !== 'HEAD'
+            ? { 'Content-Type': request.headers.get('Content-Type') || '' }
+            : {}),
         },
         body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
       });
+
+      const headers = new Headers(upstream.headers);
+      // Long cache for images so CDN stores them correctly after first fetch
+      const ext = url.pathname.split('.').pop().toLowerCase();
+      if (['webp', 'jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+        headers.set('Cache-Control', 'public, max-age=86400');
+      }
+      return new Response(upstream.body, { status: upstream.status, headers });
     }
 
-    // Redirect images to workers.dev which bypasses the corrupted CDN cache
-    const ext = url.pathname.split('.').pop().toLowerCase();
-    if (['webp', 'jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
-      return Response.redirect(WORKERS_DEV + url.pathname, 302);
-    }
-
+    // HTML, CSS, JS — from Workers Static Assets
     const response = await env.ASSETS.fetch(request);
     const headers = new Headers(response.headers);
     headers.set('Cache-Control', 'public, max-age=300');
