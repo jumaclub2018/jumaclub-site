@@ -13,6 +13,8 @@ export default {
       });
     }
 
-    return env.ASSETS.fetch(request);
+    // Rewrite to canonical workers.dev URL so ASSETS binding resolves correctly
+    const canonicalUrl = new URL(url.pathname + url.search, 'https://jumaclub-site.egorzhukov1995.workers.dev');
+    return env.ASSETS.fetch(new Request(canonicalUrl.toString(), request));
   },
 };
