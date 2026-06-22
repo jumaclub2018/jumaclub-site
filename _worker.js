@@ -6,7 +6,11 @@ export default {
 
     // API and images — proxy to Railway (bypasses corrupted Workers CDN cache)
     if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/img/') || url.pathname.startsWith('/images/')) {
-      const upstream = await fetch(RAILWAY + url.pathname + url.search, {
+      // Railway still has old /images/webp/ path; map /img/ → /images/webp/
+      const railwayPath = url.pathname.startsWith('/img/')
+        ? url.pathname.replace('/img/', '/images/webp/')
+        : url.pathname;
+      const upstream = await fetch(RAILWAY + railwayPath + url.search, {
         method: request.method,
         headers: {
           'Host': 'jumaclub-site-production.up.railway.app',
