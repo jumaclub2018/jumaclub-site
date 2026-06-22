@@ -13,8 +13,11 @@ export default {
       });
     }
 
-    // Rewrite to canonical workers.dev URL so ASSETS binding resolves correctly
+    // Rewrite to canonical workers.dev URL with clean headers so ASSETS binding resolves correctly
     const canonicalUrl = new URL(url.pathname + url.search, 'https://jumaclub-site.egorzhukov1995.workers.dev');
-    return env.ASSETS.fetch(new Request(canonicalUrl.toString(), request));
+    return env.ASSETS.fetch(new Request(canonicalUrl.toString(), {
+      method: request.method,
+      headers: { 'Accept': request.headers.get('Accept') || '*/*' },
+    }));
   },
 };
