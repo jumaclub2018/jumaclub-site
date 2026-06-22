@@ -1,0 +1,7 @@
+_worker.js
+wrangler.toml
+server.js
+package.json
+package-lock.json
+functions/
+node_modules/
