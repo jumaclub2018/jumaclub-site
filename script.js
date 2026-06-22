@@ -152,14 +152,7 @@ const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').mat
 if (!prefersReduced && typeof gsap !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 
-  // Lenis smooth scroll — только для не-touch устройств
-  const isTouch = navigator.maxTouchPoints > 0;
-  if (!isTouch && typeof Lenis !== 'undefined') {
-    const lenis = new Lenis({ lerp: 0.075, wheelMultiplier: 0.9 });
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((time) => { lenis.raf(time * 1000); });
-    gsap.ticker.lagSmoothing(0);
-  }
+  ScrollTrigger.refresh();
 
   // ── 1. Hero — появление элементов по очереди ────────────────────────────────
   gsap.timeline({ defaults: { ease: 'power2.out' } })
