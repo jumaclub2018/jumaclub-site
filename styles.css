@@ -1330,3 +1330,13 @@ p { font-size: 1.05rem; line-height: 1.7; }
 @media (max-width: 480px) {
   .scroll-top { bottom: 78px; right: 16px; width: 44px; height: 44px; }
 }
+
+/* Окно чата компактнее — не закрывает весь сайт на телефоне */
+@media (max-width: 480px) {
+  .chat-panel {
+    width: calc(100vw - 28px);
+    height: 54vh;
+    max-height: 58vh;
+    bottom: 80px;
+  }
+}
