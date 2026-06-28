@@ -1376,3 +1376,7 @@ p { font-size: 1.05rem; line-height: 1.7; }
 @media (max-width: 480px) {
   .chat-panel { width: min(80vw, 290px); height: 42vh; max-height: 46vh; }
 }
+
+/* Текст в чате чуть меньше */
+.chat-msg { font-size: 0.84rem; }
+.chat-input input { font-size: 0.84rem; }
