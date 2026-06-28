@@ -1,3 +1,4 @@
+# Код и конфиги — не публиковать
 _worker.js
 wrangler.toml
 server.js
@@ -5,5 +6,19 @@ package.json
 package-lock.json
 functions/
 node_modules/
+
+# Картинки идут через Railway-прокси, не из статики
 img/
 images/
+
+# СЕКРЕТЫ и приватное — НИКОГДА не отдавать публично
+.env
+.env.*
+.dev.vars
+.git/
+.gitignore
+.assetsignore
+.claude/
+.wrangler/
+.DS_Store
+research.md
