@@ -1364,3 +1364,9 @@ p { font-size: 1.05rem; line-height: 1.7; }
     right: 0;
   }
 }
+
+/* Окно чата ниже по высоте */
+.chat-panel { height: 420px; }
+@media (max-width: 480px) {
+  .chat-panel { height: 48vh; max-height: 52vh; }
+}
