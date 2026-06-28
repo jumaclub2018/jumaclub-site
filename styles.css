@@ -1293,3 +1293,16 @@ p { font-size: 1.05rem; line-height: 1.7; }
   .chat-widget { right: 14px; bottom: 14px; }
   .chat-panel { bottom: 70px; height: 70vh; }
 }
+
+/* Фикс: окно чата скрыто, пока не нажат кружок (атрибут hidden перебивался display:flex) */
+.chat-panel[hidden] { display: none !important; }
+
+/* Мобильная версия — компактнее и не на весь экран */
+@media (max-width: 480px) {
+  .chat-toggle { width: 54px; height: 54px; }
+  .chat-panel {
+    width: calc(100vw - 28px);
+    height: 62vh;
+    bottom: 70px;
+  }
+}
