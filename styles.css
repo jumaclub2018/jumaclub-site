@@ -1091,8 +1091,8 @@ p { font-size: 1.05rem; line-height: 1.7; }
 /* ===== SCROLL TO TOP ===== */
 .scroll-top {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
+  bottom: 92px;
+  right: 26px;
   width: 48px; height: 48px;
   background: var(--navy);
   color: #fff;
@@ -1325,3 +1325,8 @@ p { font-size: 1.05rem; line-height: 1.7; }
   width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
 }
 .chat-row.bot .chat-msg.bot { max-width: 100%; }
+
+/* Кнопка «наверх» — над кружком чата на мобильном */
+@media (max-width: 480px) {
+  .scroll-top { bottom: 78px; right: 16px; width: 44px; height: 44px; }
+}
