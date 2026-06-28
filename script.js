@@ -294,6 +294,7 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
   const history = [];        // реальные ходы для API
   let started = false;
   let busy = false;
+  let userActed = false;     // открывал ли пользователь чат сам
 
   function addMsg(text, who, extraClass) {
     if (who === 'bot') {
@@ -335,7 +336,15 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
     panel.hidden = true;
     toggle.setAttribute('aria-label', 'Открыть чат');
   }
-  toggle.addEventListener('click', () => widget.classList.contains('open') ? closeChat() : openChat());
+  toggle.addEventListener('click', () => {
+    userActed = true;
+    widget.classList.contains('open') ? closeChat() : openChat();
+  });
+
+  // Авто-открытие через 30 секунд, если посетитель сам ещё не трогал чат
+  setTimeout(() => {
+    if (!userActed && !widget.classList.contains('open')) openChat();
+  }, 30000);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
