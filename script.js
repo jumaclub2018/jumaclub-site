@@ -341,9 +341,9 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
     widget.classList.contains('open') ? closeChat() : openChat();
   });
 
-  // Авто-открытие через 30 секунд, если посетитель сам ещё не трогал чат
+  // Авто-открытие через 30 секунд в любом случае (если окно ещё не открыто)
   setTimeout(() => {
-    if (!userActed && !widget.classList.contains('open')) openChat();
+    if (!widget.classList.contains('open')) openChat();
   }, 30000);
 
   form.addEventListener('submit', async (e) => {
