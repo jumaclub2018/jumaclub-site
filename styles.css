@@ -1352,3 +1352,15 @@ p { font-size: 1.05rem; line-height: 1.7; }
   .chat-panel { width: calc(100vw - 24px); height: 52vh; max-height: 56vh; bottom: 70px; }
   .scroll-top { right: 14px; bottom: 72px; }
 }
+
+/* Окно чата — уже, выше (прямоугольное), прижато к кружку справа */
+.chat-panel { width: 320px; height: 470px; bottom: 78px; right: 0; }
+@media (max-width: 480px) {
+  .chat-panel {
+    width: min(84vw, 310px);
+    height: 56vh;
+    max-height: 60vh;
+    bottom: 70px;
+    right: 0;
+  }
+}

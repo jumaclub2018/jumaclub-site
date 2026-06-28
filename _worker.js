@@ -31,9 +31,11 @@ export default {
     }
 
     // HTML, CSS, JS — from Workers Static Assets
+    // no-cache: браузер каждый раз сверяется с сервером (304 если не изменилось),
+    // поэтому правки видны сразу, без устаревшего кэша
     const response = await env.ASSETS.fetch(request);
     const headers = new Headers(response.headers);
-    headers.set('Cache-Control', 'public, max-age=300');
+    headers.set('Cache-Control', 'no-cache');
     return new Response(response.body, { status: response.status, headers });
   },
 };
