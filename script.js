@@ -278,3 +278,77 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
     scrollTrigger: { trigger: '.final-cta', start: 'top 80%', once: true },
   });
 }
+
+// ── Онлайн-помощник (ИИ-чат) ──────────────────────────────────────────────────
+(function () {
+  const widget   = document.querySelector('.chat-widget');
+  const toggle   = document.querySelector('.chat-toggle');
+  const panel    = document.querySelector('.chat-panel');
+  const list     = document.getElementById('chatMessages');
+  const form     = document.getElementById('chatForm');
+  const input    = document.getElementById('chatText');
+  if (!widget || !toggle || !panel || !list || !form || !input) return;
+
+  const GREETING = 'Здравствуйте! 👋 Я помощник Juma Club. Спрошу что нужно: цены, адреса, возраст, как записаться на бесплатное пробное. Чем помочь?';
+  const history = [];        // реальные ходы для API
+  let started = false;
+  let busy = false;
+
+  function addMsg(text, who, extraClass) {
+    const el = document.createElement('div');
+    el.className = 'chat-msg ' + who + (extraClass ? ' ' + extraClass : '');
+    el.textContent = text;
+    list.appendChild(el);
+    list.scrollTop = list.scrollHeight;
+    return el;
+  }
+
+  function openChat() {
+    widget.classList.add('open');
+    panel.hidden = false;
+    toggle.setAttribute('aria-label', 'Закрыть чат');
+    if (!started) {
+      started = true;
+      addMsg(GREETING, 'bot');
+    }
+    setTimeout(() => input.focus(), 50);
+  }
+  function closeChat() {
+    widget.classList.remove('open');
+    panel.hidden = true;
+    toggle.setAttribute('aria-label', 'Открыть чат');
+  }
+  toggle.addEventListener('click', () => widget.classList.contains('open') ? closeChat() : openChat());
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || busy) return;
+
+    addMsg(text, 'user');
+    history.push({ role: 'user', content: text });
+    input.value = '';
+    busy = true;
+
+    const typing = addMsg('печатает…', 'bot', 'typing');
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json();
+      typing.remove();
+      const reply = (data && data.reply) ? data.reply
+        : 'Извините, не получилось ответить. Позвоните нам: +7 901 783-11-73';
+      addMsg(reply, 'bot');
+      history.push({ role: 'assistant', content: reply });
+    } catch {
+      typing.remove();
+      addMsg('Связь прервалась. Позвоните нам: +7 901 783-11-73', 'bot');
+    } finally {
+      busy = false;
+    }
+  });
+})();

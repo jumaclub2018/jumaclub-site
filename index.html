@@ -811,6 +811,27 @@
 <!-- Scroll to top -->
 <button class="scroll-top" aria-label="Наверх">↑</button>
 
+<!-- Онлайн-помощник -->
+<div class="chat-widget">
+  <button class="chat-toggle" aria-label="Открыть чат">
+    <svg class="chat-toggle-open" width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 3C6.5 3 2 6.8 2 11.5c0 2.4 1.2 4.6 3.1 6.1L4 22l4.5-2.1c1.1.3 2.3.5 3.5.5 5.5 0 10-3.8 10-8.9S17.5 3 12 3z" fill="white"/>
+    </svg>
+    <span class="chat-toggle-close" aria-hidden="true">✕</span>
+  </button>
+  <div class="chat-panel" hidden>
+    <div class="chat-header">
+      <div class="chat-header-title">Онлайн-помощник Juma Club</div>
+      <div class="chat-header-sub">Обычно отвечаем сразу</div>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <form class="chat-input" id="chatForm">
+      <input type="text" id="chatText" placeholder="Напишите вопрос…" autocomplete="off" maxlength="2000">
+      <button type="submit" aria-label="Отправить">➤</button>
+    </form>
+  </div>
+</div>
+
 <!-- GSAP + ScrollTrigger -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
