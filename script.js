@@ -289,12 +289,29 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
   const input    = document.getElementById('chatText');
   if (!widget || !toggle || !panel || !list || !form || !input) return;
 
-  const GREETING = 'Здравствуйте! 👋 Я помощник Juma Club. Спрошу что нужно: цены, адреса, возраст, как записаться на бесплатное пробное. Чем помочь?';
+  const GREETING = 'Здравствуйте! 👋 Спрашивайте что угодно — цены, расписание, адреса, как попасть на бесплатное пробное занятие. Чем можем помочь?';
+  const AVATAR = '/img/coach-egor.webp';
   const history = [];        // реальные ходы для API
   let started = false;
   let busy = false;
 
   function addMsg(text, who, extraClass) {
+    if (who === 'bot') {
+      const row = document.createElement('div');
+      row.className = 'chat-row bot' + (extraClass ? ' ' + extraClass : '');
+      const av = document.createElement('img');
+      av.className = 'chat-avatar-sm';
+      av.src = AVATAR;
+      av.alt = '';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-msg bot' + (extraClass ? ' ' + extraClass : '');
+      bubble.textContent = text;
+      row.appendChild(av);
+      row.appendChild(bubble);
+      list.appendChild(row);
+      list.scrollTop = list.scrollHeight;
+      return row;
+    }
     const el = document.createElement('div');
     el.className = 'chat-msg ' + who + (extraClass ? ' ' + extraClass : '');
     el.textContent = text;

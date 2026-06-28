@@ -1306,3 +1306,22 @@ p { font-size: 1.05rem; line-height: 1.7; }
     bottom: 70px;
   }
 }
+
+/* Аватар-фото в чате — ощущение живого общения */
+.chat-header { display: flex; align-items: center; gap: 12px; }
+.chat-avatar {
+  width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.25); flex-shrink: 0;
+}
+.chat-online-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: #38d39f; margin-right: 5px; vertical-align: middle;
+}
+.chat-row.bot {
+  display: flex; align-items: flex-end; gap: 8px;
+  max-width: 90%; align-self: flex-start;
+}
+.chat-avatar-sm {
+  width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+}
+.chat-row.bot .chat-msg.bot { max-width: 100%; }
