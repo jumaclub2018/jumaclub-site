@@ -1380,3 +1380,14 @@ p { font-size: 1.05rem; line-height: 1.7; }
 /* Текст в чате чуть меньше */
 .chat-msg { font-size: 0.84rem; }
 .chat-input input { font-size: 0.84rem; }
+
+/* Плавающие кнопки мессенджеров */
+.msg-fab { position: fixed; left: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 10px; z-index: 900; }
+.msg-fab-btn { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.28); transition: transform .15s ease; }
+.msg-fab-btn:hover { transform: scale(1.08); }
+.msg-fab-btn img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+@media (max-width: 600px) {
+  .msg-fab { left: 12px; bottom: 12px; gap: 8px; }
+  .msg-fab-btn { width: 46px; height: 46px; }
+  .msg-fab-btn svg { width: 23px; height: 23px; }
+}
