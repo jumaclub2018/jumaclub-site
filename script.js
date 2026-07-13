@@ -1,5 +1,17 @@
 'use strict';
 
+// ── Сохраняем UTM-метки при заходе (для источника заявок) ────────────────────
+(function () {
+  try {
+    const p = new URLSearchParams(location.search);
+    const s = p.get('utm_source'), c = p.get('utm_campaign');
+    if (s || c) {
+      const src = [s || '', c || ''].filter(Boolean).join(' / ').slice(0, 60);
+      sessionStorage.setItem('juma_src', src);
+    }
+  } catch (e) {}
+})();
+
 // ── Ленивая загрузка Яндекс-карт ─────────────────────────────────────────────
 // Карты загружаются только когда блок контактов появляется в зоне видимости
 (function () {
@@ -113,11 +125,14 @@ async function submitForm(form) {
   submitBtn.textContent = 'Отправляем...';
   if (messageEl) messageEl.className = 'form-message';
 
+  // источник заявки из UTM-меток рекламы (сохранены при заходе), иначе «сайт»
+  const source = (sessionStorage.getItem('juma_src') || 'сайт');
+
   try {
     const res = await fetch('/api/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, source: 'landing' }),
+      body: JSON.stringify({ name, phone, source }),
     });
 
     if (res.ok) {

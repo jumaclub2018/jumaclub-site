@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,6 +11,20 @@ const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TG_CHAT  = process.env.TELEGRAM_CHAT_ID;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_KEY });
+
+// ── Общая база (сохраняем заявки с источником) ───────────────────────────────
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+  : null;
+async function saveLead(name, phone, source) {
+  if (!pool) return;
+  try {
+    await pool.query(
+      "INSERT INTO leads (name, phone, hall, status, created_date, source) VALUES ($1,$2,'','new',CURRENT_DATE,$3)",
+      [String(name).slice(0, 120), String(phone).slice(0, 40), String(source || 'сайт').slice(0, 60)]
+    );
+  } catch (e) { console.error('saveLead:', e.message); }
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
@@ -32,7 +47,7 @@ async function tgSend(text) {
 
 // ── Заявка с формы ────────────────────────────────────────────────────────────
 app.post('/api/leads', async (req, res) => {
-  const { name, phone } = req.body ?? {};
+  const { name, phone, source } = req.body ?? {};
   if (!name || !phone) {
     return res.status(400).json({ error: 'name and phone are required' });
   }
@@ -40,8 +55,10 @@ app.post('/api/leads', async (req, res) => {
     console.error('TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set');
     return res.status(500).json({ error: 'server_misconfigured' });
   }
+  const src = (source || 'сайт').toString().slice(0, 60);
+  saveLead(name.trim(), phone.trim(), src); // сохраняем в базу (best-effort)
   try {
-    await tgSend(`🥋 Новая заявка с сайта!\nИмя: ${name.trim()}\nТелефон: ${phone.trim()}`);
+    await tgSend(`🥋 Новая заявка с сайта!\nИмя: ${name.trim()}\nТелефон: ${phone.trim()}\nИсточник: ${src}`);
     return res.json({ ok: true });
   } catch (err) {
     console.error('Telegram error:', err.message);
@@ -136,6 +153,7 @@ app.post('/api/chat', async (req, res) => {
         const name = inp.name || 'не указано';
         const contact = inp.contact || 'не указан';
         const question = inp.question || '';
+        saveLead(name, contact, 'сайт-чат');
         try {
           await tgSend(`💬 Вопрос с сайта (онлайн-чат)\nИмя: ${name}\nКонтакт: ${contact}\nВопрос: ${question}`);
         } catch (e) {
