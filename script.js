@@ -144,7 +144,7 @@ async function submitForm(form) {
       if (typeof ym     !== 'undefined') ym(window._ymId, 'reachGoal', 'lead_submitted');
       if (typeof gtag   !== 'undefined') gtag('event', 'generate_lead');
       // пиксель VK Рекламы — явная цель, надёжнее автопоиска событий
-      if (window._tmr) window._tmr.push({ type: 'reachGoal', id: '3785599', goal: 'lead' });
+      if (window._tmr) window._tmr.push({ type: 'reachGoal', id: 3785599, goal: 'lead' });
     } else {
       throw new Error('server_error');
     }
@@ -390,7 +390,7 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
       // чат передал контакт руководителю — это тоже заявка, засчитываем в цели
       if (data && data.escalated) {
         if (typeof ym !== 'undefined') ym(window._ymId, 'reachGoal', 'lead_submitted');
-        if (window._tmr) window._tmr.push({ type: 'reachGoal', id: '3785599', goal: 'lead' });
+        if (window._tmr) window._tmr.push({ type: 'reachGoal', id: 3785599, goal: 'lead' });
       }
     } catch {
       typing.remove();
