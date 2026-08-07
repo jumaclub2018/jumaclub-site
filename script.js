@@ -143,6 +143,8 @@ async function submitForm(form) {
       form.reset();
       if (typeof ym     !== 'undefined') ym(window._ymId, 'reachGoal', 'lead_submitted');
       if (typeof gtag   !== 'undefined') gtag('event', 'generate_lead');
+      // пиксель VK Рекламы — явная цель, надёжнее автопоиска событий
+      if (window._tmr) window._tmr.push({ type: 'reachGoal', id: '3785599', goal: 'lead' });
     } else {
       throw new Error('server_error');
     }
@@ -385,6 +387,11 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
         : 'Извините, не получилось ответить. Позвоните нам: +7 901 783-11-73';
       addMsg(reply, 'bot');
       history.push({ role: 'assistant', content: reply });
+      // чат передал контакт руководителю — это тоже заявка, засчитываем в цели
+      if (data && data.escalated) {
+        if (typeof ym !== 'undefined') ym(window._ymId, 'reachGoal', 'lead_submitted');
+        if (window._tmr) window._tmr.push({ type: 'reachGoal', id: '3785599', goal: 'lead' });
+      }
     } catch {
       typing.remove();
       addMsg('Связь прервалась. Позвоните нам: +7 901 783-11-73', 'bot');
