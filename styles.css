@@ -304,6 +304,52 @@ p { font-size: 1.05rem; line-height: 1.7; }
 
 .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
 
+/* ── Форма записи на первом экране ──────────────────────────────
+   Пришедший по рекламе видит её сразу, без прокрутки страницы. */
+.hero-form {
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid rgba(20, 30, 60, .09);
+  box-shadow: 0 10px 30px rgba(20, 30, 60, .10);
+  gap: 12px;
+}
+.hero-form-head { display: flex; flex-direction: column; gap: 4px; }
+.hero-form-head strong {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.3;
+}
+.hero-form-head span {
+  font-size: .84rem;
+  color: var(--text-mid);
+  line-height: 1.4;
+}
+/* Поля спокойные, почти сливаются с карточкой — как в нижней форме.
+   Подсказки внутри полей, отдельных подписей нет. */
+.hero-form .form-input {
+  background: rgba(20, 30, 60, .035);
+  border: 1px solid rgba(20, 30, 60, .07);
+  padding: 15px 18px;
+}
+.hero-form .form-input::placeholder { color: rgba(20, 30, 60, .38); }
+.hero-form .form-input:focus {
+  background: #fff;
+  border-color: var(--accent);
+}
+.hero-form .form-submit { width: 100%; justify-content: center; }
+.hero-form .form-legal {
+  margin: 0;
+  font-size: .76rem;
+  line-height: 1.45;
+  color: rgba(20, 30, 60, .45);
+}
+/* на белой карточке нужен более тёмный зелёный, чем на тёмной секции */
+.hero-form .form-message.success { color: #1f7a52; }
+.hero-btns { margin-top: 14px; }
+
 .hero-image {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -1130,14 +1176,28 @@ p { font-size: 1.05rem; line-height: 1.7; }
   .hero { padding-top: 96px; padding-bottom: 52px; }
   .hero-layout { grid-template-columns: 1fr; column-gap: 0; row-gap: 20px; align-items: start; }
   .hero-locations { grid-column: 1; grid-row: 1; margin-bottom: 0; }
-  .hero-image { grid-column: 1; grid-row: 2; max-width: 100%; margin: 0 auto; width: 100%; }
-  .hero-content { grid-column: 1; grid-row: 3; }
 
-  /* Фото — показываем целиком без обрезки */
+  /* Текст и форма ВЫШЕ фото: пришедший по рекламе должен увидеть
+     форму записи сразу, а не после экрана с картинкой. */
+  .hero-content { grid-column: 1; grid-row: 2; }
+  .hero-image   { grid-column: 1; grid-row: 3; max-width: 100%; margin: 0 auto; width: 100%; }
+
+  /* Внутри текста порядок тоже под конверсию:
+     заголовок → оффер → форма, а плашки с возрастами уходят под неё. */
+  .hero-content { display: flex; flex-direction: column; }
+  .hero-content h1 { order: 1; }
+  .hero-sub       { order: 2; }
+  .hero-hook      { order: 3; }
+  .hero-form      { order: 4; margin-top: 18px; }
+  .age-groups     { order: 5; margin: 24px 0 0; }
+  .hero-btns      { order: 6; }
+
+  /* Фото стоит НИЖЕ формы, поэтому обрезать его незачем — показываем целиком */
   .hero-photo-wrap { aspect-ratio: unset; }
   .hero-photo-wrap img { height: auto; object-fit: unset; }
 
-  .age-groups { grid-template-columns: 1fr 1fr; }
+  .age-groups { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .age-tag { padding: 10px 12px; font-size: .78rem; }
 
   .coaches-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
 
