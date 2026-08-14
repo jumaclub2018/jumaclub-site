@@ -163,6 +163,17 @@ document.querySelectorAll('.signup-form').forEach(form => {
   form.addEventListener('submit', e => { e.preventDefault(); submitForm(form); });
 });
 
+// ── Клик по мессенджеру — тоже обращение, засчитываем в цели ─────────────────
+// Заявка при этом уходит в личку, а не в базу: в отчётах это будет видно
+// как цель, но записи в таблице leads не появится.
+document.querySelectorAll('[data-msg]').forEach(link => {
+  link.addEventListener('click', () => {
+    const via = link.dataset.msg;
+    if (typeof ym !== 'undefined') ym(window._ymId, 'reachGoal', 'messenger_click', { via });
+    if (window._tmr) window._tmr.push({ type: 'reachGoal', id: 3785599, goal: 'messenger' });
+  });
+});
+
 // ── Animations (GSAP + ScrollTrigger + Lenis) ─────────────────────────────────
 const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -182,16 +193,20 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
     .from('.hero-photo-wrap', { opacity: 0, x: 28, duration: 0.6  }, 0.2);
 
   // ── 2. Параллакс фото на первом экране ──────────────────────────────────────
-  gsap.to('.hero-photo-wrap', {
-    yPercent: -10,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: '.hero',
-      start: 'top top',
-      end: 'bottom top',
-      scrub: true,
-    },
-  });
+  // Только на десктопе: на телефоне фото вертикальное и высокое, сдвиг на 10%
+  // высоты открывает заметную пустоту сверху и снизу.
+  if (window.matchMedia('(min-width: 901px)').matches) {
+    gsap.to('.hero-photo-wrap', {
+      yPercent: -10,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+      },
+    });
+  }
 
   // ── 3. Заголовки секций ──────────────────────────────────────────────────────
   document.querySelectorAll('section').forEach(section => {

@@ -348,6 +348,56 @@ p { font-size: 1.05rem; line-height: 1.7; }
 }
 /* на белой карточке нужен более тёмный зелёный, чем на тёмной секции */
 .hero-form .form-message.success { color: #1f7a52; }
+
+/* Факты под формой: где, когда, сколько — три вопроса, на которые
+   родитель хочет получить ответ ДО того, как оставит телефон. */
+.hero-facts {
+  display: flex; flex-wrap: wrap; gap: 6px 8px;
+  margin-top: 2px;
+}
+.hero-facts span {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  background: rgba(20, 30, 60, .045);
+  border-radius: 999px;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+
+/* Мессенджеры — для тех, кто не хочет оставлять телефон */
+.hero-messengers {
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(20, 30, 60, .08);
+}
+.hm-label {
+  display: block;
+  font-size: .8rem;
+  color: var(--text-mid);
+  margin-bottom: 8px;
+}
+.hm-links { display: flex; gap: 8px; flex-wrap: wrap; }
+.hm-btn {
+  flex: 1 1 0;
+  min-width: 96px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-size: .82rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: #fff;
+  transition: filter .15s, transform .15s;
+}
+.hm-btn svg { width: 15px; height: 15px; flex: none; }
+.hm-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.hm-tg  { background: #2AABEE; }
+.hm-vk  { background: #0077FF; }
+.hm-max { background: #7C4DFF; }
 .hero-btns { margin-top: 14px; }
 
 .hero-image {
@@ -1192,9 +1242,15 @@ p { font-size: 1.05rem; line-height: 1.7; }
   .age-groups     { order: 5; margin: 24px 0 0; }
   .hero-btns      { order: 6; }
 
-  /* Фото стоит НИЖЕ формы, поэтому обрезать его незачем — показываем целиком */
-  .hero-photo-wrap { aspect-ratio: unset; }
-  .hero-photo-wrap img { height: auto; object-fit: unset; }
+  /* Фото стоит НИЖЕ формы, поэтому обрезать его незачем — показываем целиком.
+     display:block вместо flex, чтобы под картинкой не оставалось пустоты. */
+  .hero-photo-wrap {
+    aspect-ratio: unset;
+    display: block;
+    transform: none;      /* параллакс на мобильных выключен */
+  }
+  .hero-photo-wrap img { height: auto; object-fit: unset; display: block; }
+  .hero-image { margin-top: 4px; }
 
   .age-groups { grid-template-columns: 1fr 1fr; gap: 8px; }
   .age-tag { padding: 10px 12px; font-size: .78rem; }
