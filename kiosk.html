@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Juma Club — киоск</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥋</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0c1526; --navy2:#17243f; --accent:#e8372a; --gold:#f5a623;
+    --ink:#ffffff; --muted:rgba(255,255,255,.68);
+    --card:rgba(255,255,255,.07); --line:rgba(255,255,255,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
+  body{
+    font-family:'Montserrat',system-ui,-apple-system,sans-serif;
+    background:radial-gradient(120% 100% at 50% 0%, var(--navy2) 0%, var(--navy) 65%);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    user-select:none;
+  }
+  button,a{font-family:inherit;-webkit-appearance:none;border:0;background:none;color:inherit}
+
+  /* ── экраны ── */
+  .screen{
+    position:fixed;inset:0;display:flex;flex-direction:column;
+    padding:max(28px,env(safe-area-inset-top)) 34px max(28px,env(safe-area-inset-bottom));
+    opacity:0;pointer-events:none;transition:opacity .32s ease;
+  }
+  .screen.on{opacity:1;pointer-events:auto}
+
+  /* ── 1. ЗАСТАВКА ── */
+  #attract{align-items:center;justify-content:center;text-align:center;cursor:pointer}
+  #attract .photos{position:absolute;inset:0;overflow:hidden}
+  #attract .photos img{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    opacity:0;transition:opacity 1.4s ease;transform:scale(1.06);
+  }
+  #attract .photos img.vis{opacity:.42}
+  #attract .veil{position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(12,21,38,.55),rgba(12,21,38,.86))}
+  #attract .inner{position:relative;z-index:2}
+  #attract .logo{width:min(38vw,300px);filter:brightness(0) invert(1);margin-bottom:34px}
+  #attract h1{
+    font-family:'Oswald';font-weight:600;letter-spacing:.16em;
+    font-size:clamp(28px,4.4vw,52px);line-height:1.15;
+  }
+  #attract .sub{
+    margin-top:18px;font-size:clamp(15px,1.9vw,22px);color:var(--muted);letter-spacing:.04em
+  }
+  .tap{
+    margin-top:52px;display:inline-flex;align-items:center;gap:14px;
+    padding:20px 40px;border-radius:999px;background:var(--accent);
+    font-weight:800;font-size:clamp(17px,2vw,24px);letter-spacing:.02em;
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+
+  /* ── шапка внутренних экранов ── */
+  .top{display:flex;align-items:center;gap:18px;margin-bottom:26px;flex:none}
+  .back{
+    width:66px;height:66px;border-radius:20px;background:var(--card);
+    display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;
+  }
+  .top h2{font-family:'Oswald';font-weight:600;letter-spacing:.08em;font-size:clamp(24px,3.2vw,38px)}
+
+  /* ── 2. МЕНЮ ── */
+  #menu .tiles{
+    flex:1;display:grid;gap:22px;
+    grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  }
+  .tile{
+    background:var(--card);border:1px solid var(--line);border-radius:28px;
+    display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;
+    padding:30px;text-align:left;transition:transform .12s,background .12s;
+  }
+  .tile:active{transform:scale(.975);background:rgba(255,255,255,.12)}
+  .tile .ico{font-size:clamp(38px,5vw,58px);margin-bottom:auto}
+  .tile .t{font-family:'Oswald';font-weight:600;font-size:clamp(20px,2.6vw,31px);letter-spacing:.04em}
+  .tile .d{margin-top:9px;font-size:clamp(13px,1.5vw,17px);color:var(--muted);line-height:1.4}
+  .tile.hot{background:linear-gradient(150deg,#e8372a,#b8261c);border-color:transparent}
+  .tile.hot .d{color:rgba(255,255,255,.85)}
+
+  /* ── общий скролл-контент ── */
+  .body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+  .body::-webkit-scrollbar{width:0}
+
+  /* ── 3. РАСПИСАНИЕ / ГРУППЫ ── */
+  .grp{
+    background:var(--card);border:1px solid var(--line);border-radius:22px;
+    padding:22px 26px;margin-bottom:14px;display:flex;align-items:center;gap:22px;
+  }
+  .grp .age{
+    font-family:'Oswald';font-weight:700;font-size:clamp(22px,2.8vw,32px);
+    color:var(--gold);min-width:130px;
+  }
+  .grp .nm{font-weight:700;font-size:clamp(16px,1.9vw,22px)}
+  .grp .ds{margin-top:5px;font-size:clamp(13px,1.5vw,17px);color:var(--muted);line-height:1.4}
+  .halls{display:grid;gap:14px;grid-template-columns:1fr 1fr 1fr;margin-top:22px}
+  .hall{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+  .hall .h{font-family:'Oswald';font-weight:600;font-size:clamp(16px,1.9vw,21px);color:var(--gold)}
+  .hall .a{margin-top:8px;font-size:clamp(13px,1.4vw,16px);color:var(--muted);line-height:1.45}
+  .hall .p{margin-top:12px;font-weight:700;font-size:clamp(15px,1.7vw,19px)}
+
+  /* ── 4. ЗАПИСЬ ── */
+  .form{max-width:760px;margin:0 auto;width:100%}
+  .fld{margin-bottom:18px}
+  .fld input{
+    width:100%;padding:26px 28px;border-radius:20px;
+    background:rgba(255,255,255,.10);border:2px solid transparent;
+    color:#fff;font-size:clamp(18px,2.2vw,26px);font-weight:600;
+  }
+  .fld input::placeholder{color:rgba(255,255,255,.45)}
+  .fld input:focus{outline:0;border-color:var(--gold);background:rgba(255,255,255,.16)}
+  .send{
+    width:100%;padding:28px;border-radius:20px;background:var(--accent);
+    font-weight:800;font-size:clamp(19px,2.3vw,27px);letter-spacing:.02em;
+  }
+  .send:active{transform:scale(.985)}
+  .msg{
+    margin-top:20px;padding:22px;border-radius:18px;text-align:center;
+    font-weight:700;font-size:clamp(16px,1.9vw,21px);display:none;
+  }
+  .msg.ok{display:block;background:rgba(72,199,142,.18);color:#7ee0b0}
+  .msg.err{display:block;background:rgba(232,55,42,.18);color:#ff9a91}
+  .legal{margin-top:16px;text-align:center;font-size:13px;color:rgba(255,255,255,.42);line-height:1.5}
+
+  /* ── СКАНЕР ── */
+  .scanwrap{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  #cam{width:min(78vw,620px);aspect-ratio:1;object-fit:cover;border-radius:28px;background:#000}
+  .frame{
+    position:absolute;width:min(52vw,400px);aspect-ratio:1;border-radius:20px;
+    box-shadow:0 0 0 4px var(--gold), 0 0 0 9999px rgba(12,21,38,.55);
+    pointer-events:none;
+  }
+  .scanhint{margin-top:28px;font-size:clamp(15px,1.9vw,22px);color:var(--muted);text-align:center;max-width:620px}
+
+  /* ── КАРТОЧКА УЧЕНИКА ── */
+  .stats{display:grid;gap:16px;grid-template-columns:1fr 1fr;margin-bottom:26px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px 28px}
+  .stat .k{font-size:clamp(13px,1.5vw,16px);color:var(--muted);letter-spacing:.04em}
+  .stat .v{font-family:'Oswald';font-weight:700;font-size:clamp(28px,4vw,52px);margin-top:8px;line-height:1}
+  .stat .v.warn{color:#ff9a91}
+  .stat .v.good{color:#7ee0b0}
+  .stat .sub{margin-top:8px;font-size:clamp(12px,1.4vw,15px);color:var(--muted)}
+  .stat.wide{grid-column:1 / -1}
+
+  /* ── 5. ЧАТ ── */
+  #chat .body{display:flex;flex-direction:column;gap:14px}
+  .bub{
+    max-width:78%;padding:20px 24px;border-radius:22px;
+    font-size:clamp(16px,1.9vw,21px);line-height:1.45;white-space:pre-wrap;
+  }
+  .bub.me{align-self:flex-end;background:var(--accent);border-bottom-right-radius:8px}
+  .bub.bot{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:8px}
+  .bub.typing{opacity:.6}
+  .hints{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;flex:none}
+  .hint{
+    padding:16px 22px;border-radius:999px;background:var(--card);
+    border:1px solid var(--line);font-size:clamp(14px,1.6vw,18px);font-weight:600;
+  }
+  .hint:active{background:rgba(255,255,255,.14)}
+  .composer{display:flex;gap:14px;flex:none;padding-top:16px}
+  .composer input{
+    flex:1;padding:24px 26px;border-radius:20px;
+    background:rgba(255,255,255,.10);border:2px solid transparent;color:#fff;
+    font-size:clamp(17px,2vw,23px);
+  }
+  .composer input:focus{outline:0;border-color:var(--gold)}
+  .composer button{
+    width:96px;border-radius:20px;background:var(--accent);
+    font-size:28px;font-weight:800;
+  }
+
+  @media (orientation:portrait){
+    #menu .tiles{grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)}
+    .tile{flex-direction:row;align-items:center;gap:24px;justify-content:flex-start}
+    .tile .ico{margin:0}
+    .halls{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ ЗАСТАВКА ══════════ -->
+<section class="screen on" id="attract">
+  <div class="photos">
+    <img src="/img/hero.webp" alt="">
+    <img src="/img/gal-1.webp" alt="">
+    <img src="/img/gal-3.webp" alt="">
+    <img src="/img/gal-5.webp" alt="">
+    <img src="/img/gal-7.webp" alt="">
+  </div>
+  <div class="veil"></div>
+  <div class="inner">
+    <img class="logo" src="/img/logo-jc.png" alt="Juma Club" onerror="this.style.display='none'">
+    <h1>ДЗЮДО И САМБО</h1>
+    <div class="sub">Апрелевка · Селятино · Эко-бунино · дети 4–18 лет</div>
+    <div class="tap">Коснитесь экрана →</div>
+  </div>
+</section>
+
+<!-- ══════════ МЕНЮ ══════════ -->
+<section class="screen" id="menu">
+  <div class="top"><h2>Чем помочь?</h2></div>
+  <div class="tiles">
+    <button class="tile hot" data-go="scan">
+      <div class="ico">📷</div>
+      <div class="t">Карточка ребёнка</div>
+      <div class="d">Отметиться и посмотреть абонемент</div>
+    </button>
+    <button class="tile" data-go="chat">
+      <div class="ico">💬</div>
+      <div class="t">Задать вопрос</div>
+      <div class="d">О дзюдо, тренировках, клубе — о чём угодно</div>
+    </button>
+    <button class="tile" data-go="contacts">
+      <div class="ico">📍</div>
+      <div class="t">Контакты</div>
+      <div class="d">Телефон, соцсети, адрес зала</div>
+    </button>
+    <button class="tile" data-go="news">
+      <div class="ico">🏆</div>
+      <div class="t">Клуб</div>
+      <div class="d">События, соревнования, новости</div>
+    </button>
+  </div>
+</section>
+
+<!-- ══════════ СКАНЕР КАРТОЧКИ ══════════ -->
+<section class="screen" id="scan">
+  <div class="top"><button class="back" data-go="menu">←</button><h2>Поднесите карточку</h2></div>
+  <div class="body scanwrap">
+    <video id="cam" playsinline muted></video>
+    <div class="frame"></div>
+    <div class="scanhint">Поднесите QR-код с карточки ребёнка к камере</div>
+    <div class="msg" id="scanmsg"></div>
+  </div>
+</section>
+
+<!-- ══════════ КАРТОЧКА УЧЕНИКА ══════════ -->
+<section class="screen" id="card">
+  <div class="top"><button class="back" data-go="menu">←</button><h2 id="cname">Карточка</h2></div>
+  <div class="body">
+    <div class="stats" id="cstats"></div>
+    <button class="send" id="checkin">Отметить посещение</button>
+    <div class="msg" id="cmsg"></div>
+  </div>
+</section>
+
+<!-- ══════════ КЛУБ ══════════ -->
+<section class="screen" id="news">
+  <div class="top"><button class="back" data-go="menu">←</button><h2>Клуб</h2></div>
+  <div class="body">
+    <div class="grp"><div class="age">🥋</div><div><div class="nm">Аттестации</div>
+      <div class="ds">Повязки на пояс вручаются на тренировке. Три повязки — и аттестация на следующий пояс</div></div></div>
+    <div class="grp"><div class="age">🏆</div><div><div class="nm">Соревнования</div>
+      <div class="ds">Расписание турниров на сезон уточняйте у тренера</div></div></div>
+    <div class="grp"><div class="age">📸</div><div><div class="nm">Фото с тренировок</div>
+      <div class="ds">Выкладываем в группе ВКонтакте — vk.com/juma.club</div></div></div>
+  </div>
+</section>
+
+<!-- ══════════ ЧАТ ══════════ -->
+<section class="screen" id="chat">
+  <div class="top"><button class="back" data-go="menu">←</button><h2>Задать вопрос</h2></div>
+  <div class="body" id="feed"></div>
+  <div class="hints" id="hints">
+    <button class="hint">С какого возраста?</button>
+    <button class="hint">Что взять на тренировку?</button>
+    <button class="hint">Сколько стоит?</button>
+    <button class="hint">Где находитесь?</button>
+  </div>
+  <div class="composer">
+    <input id="cin" placeholder="Напишите вопрос…" autocomplete="off">
+    <button id="csend">→</button>
+  </div>
+</section>
+
+<!-- ══════════ КОНТАКТЫ ══════════ -->
+<section class="screen" id="contacts">
+  <div class="top"><button class="back" data-go="menu">←</button><h2>Контакты</h2></div>
+  <div class="body">
+    <div class="grp"><div class="age">☎</div><div><div class="nm">+7 901 783-11-73</div>
+      <div class="ds">Звонок или сообщение в любом мессенджере</div></div></div>
+    <div class="grp"><div class="age">🌐</div><div><div class="nm">jumaclub.ru</div>
+      <div class="ds">Расписание, цены, отзывы</div></div></div>
+    <div class="halls">
+      <div class="hall"><div class="h">ЖК Весна · Апрелевка</div><div class="a">ул. Апрелевская 91А, 2 этаж<br>Рядом остановка «ЖК Весна»</div></div>
+      <div class="hall"><div class="h">Селятино</div><div class="a">ул. Промышленная 80</div></div>
+      <div class="hall"><div class="h">Эко-бунино</div><div class="a">Коммунарка, квартал 195</div></div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var IDLE_MS = 75000;          // возврат на заставку через 75 сек бездействия
+  var PHOTO_MS = 6000;          // смена фото на заставке
+  var idleTimer, photoTimer, photoIdx = 0;
+
+  function screens(){ return document.querySelectorAll('.screen'); }
+  function show(id){
+    screens().forEach(function(s){ s.classList.toggle('on', s.id === id); });
+    if (id === 'attract') { stopIdle(); startPhotos(); }
+    else { resetIdle(); stopPhotos(); }
+    if (id === 'chat' && !document.getElementById('feed').children.length) greet();
+    if (id === 'scan') startScan(); else stopScan();
+  }
+
+  /* ── заставка: перелистывание фото ── */
+  var pics = document.querySelectorAll('#attract .photos img');
+  function startPhotos(){
+    stopPhotos();
+    if (!pics.length) return;
+    pics.forEach(function(p,i){ p.classList.toggle('vis', i === photoIdx); });
+    photoTimer = setInterval(function(){
+      photoIdx = (photoIdx + 1) % pics.length;
+      pics.forEach(function(p,i){ p.classList.toggle('vis', i === photoIdx); });
+    }, PHOTO_MS);
+  }
+  function stopPhotos(){ clearInterval(photoTimer); }
+
+  /* ── возврат на заставку ── */
+  function resetIdle(){
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function(){ reset(); show('attract'); }, IDLE_MS);
+  }
+  function stopIdle(){ clearTimeout(idleTimer); }
+  ['touchstart','click','keydown'].forEach(function(ev){
+    document.addEventListener(ev, function(){
+      if (!document.getElementById('attract').classList.contains('on')) resetIdle();
+    }, {passive:true});
+  });
+
+  function reset(){
+    lastToken = null;
+    var cm = document.getElementById('cmsg'); if (cm) { cm.className = 'msg'; cm.textContent = ''; }
+    var sm = document.getElementById('scanmsg'); if (sm) { sm.className = 'msg'; sm.textContent = ''; }
+    document.getElementById('feed').innerHTML = '';
+    document.getElementById('hints').style.display = '';
+    chatHistory = [];
+  }
+
+  document.getElementById('attract').addEventListener('click', function(){ show('menu'); });
+  document.querySelectorAll('[data-go]').forEach(function(b){
+    b.addEventListener('click', function(){ show(b.dataset.go); });
+  });
+
+  /* ── СКАНЕР QR ── */
+  var stream = null, scanLoop = null, canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', {willReadFrequently:true});
+  var video = document.getElementById('cam');
+  var scanmsg = document.getElementById('scanmsg');
+  var lastToken = null;
+
+  function startScan(){
+    scanmsg.className = 'msg'; scanmsg.textContent = '';
+    if (!navigator.mediaDevices) { scanFail('Камера недоступна на этом устройстве'); return; }
+    navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment', width:{ideal:1280} } })
+      .then(function(st){
+        stream = st; video.srcObject = st; video.play();
+        scanLoop = setInterval(tick, 220);
+      })
+      .catch(function(){ scanFail('Нет доступа к камере. Разрешите камеру в настройках Safari'); });
+  }
+  function stopScan(){
+    clearInterval(scanLoop); scanLoop = null;
+    if (stream) { stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+    video.srcObject = null;
+  }
+  function scanFail(t){ scanmsg.className = 'msg err'; scanmsg.textContent = t; }
+
+  function tick(){
+    if (!video.videoWidth || typeof jsQR !== 'function') return;
+    var w = 520, h = 520;
+    canvas.width = w; canvas.height = h;
+    var sx = (video.videoWidth - Math.min(video.videoWidth, video.videoHeight)) / 2;
+    var sy = (video.videoHeight - Math.min(video.videoWidth, video.videoHeight)) / 2;
+    var sz = Math.min(video.videoWidth, video.videoHeight);
+    ctx.drawImage(video, sx, sy, sz, sz, 0, 0, w, h);
+    var img = ctx.getImageData(0, 0, w, h);
+    var code = jsQR(img.data, w, h, { inversionAttempts:'dontInvert' });
+    if (code && code.data) openCard(code.data);
+  }
+
+  /* ── КАРТОЧКА ── */
+  function tokenFrom(raw){
+    var t = String(raw).trim().toUpperCase();
+    var m = t.match(/[A-F0-9]{8}/);          // токен может прийти как есть или внутри ссылки
+    return m ? m[0] : t.replace(/[^A-Z0-9]/g,'').slice(0,16);
+  }
+  function openCard(raw){
+    var token = tokenFrom(raw);
+    if (!token || token === lastToken) return;
+    lastToken = token;
+    fetch('/api/kiosk/card', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token: token })
+    }).then(function(r){ if (!r.ok) throw r.status; return r.json(); })
+      .then(function(d){ stopScan(); renderCard(d.student, token); show('card'); })
+      .catch(function(){ scanFail('Карточка не распознана. Попробуйте ещё раз'); setTimeout(function(){ lastToken = null; }, 1500); });
+  }
+
+  function renderCard(s, token){
+    document.getElementById('cname').textContent = s.name;
+    var left = (s.left_count == null) ? 0 : s.left_count;
+    var cls = left <= 0 ? 'warn' : (left <= 2 ? 'warn' : 'good');
+    var payHint = left <= 0 ? 'Абонемент закончился — пора продлить'
+                : left <= 2 ? 'Скоро продлевать абонемент' : 'Всё в порядке';
+    var el = document.getElementById('cstats');
+    el.innerHTML =
+      '<div class="stat"><div class="k">ОСТАЛОСЬ ЗАНЯТИЙ</div>' +
+        '<div class="v ' + cls + '">' + left + '</div>' +
+        '<div class="sub">из ' + (s.total || '—') + ' в абонементе<br>' + payHint + '</div></div>' +
+      '<div class="stat"><div class="k">ПОЯС</div>' +
+        '<div class="v">' + (s.belt || '—') + '</div>' +
+        '<div class="sub">' + (s.belt_date ? 'с ' + s.belt_date : 'дата не указана') + '</div></div>' +
+      '<div class="stat"><div class="k">ПОСЕЩЕНИЙ ЗА МЕСЯЦ</div>' +
+        '<div class="v">' + s.visits_30 + '</div>' +
+        '<div class="sub">за последние 30 дней</div></div>' +
+      '<div class="stat"><div class="k">РАСПИСАНИЕ</div>' +
+        '<div class="v" style="font-size:clamp(20px,2.6vw,32px)">' + (s.days || '—') + '</div>' +
+        '<div class="sub">' + (s.train_time || '') + ' · ' + (s.hall || '') + '</div></div>';
+
+    var btn = document.getElementById('checkin');
+    var msg = document.getElementById('cmsg');
+    msg.className = 'msg'; msg.textContent = '';
+    if (s.checked_today) {
+      btn.disabled = true; btn.textContent = 'Сегодня уже отмечен';
+      btn.style.opacity = .55;
+    } else {
+      btn.disabled = false; btn.textContent = 'Отметить посещение';
+      btn.style.opacity = 1;
+    }
+    btn.onclick = function(){
+      btn.disabled = true; btn.textContent = 'Отмечаем…';
+      fetch('/api/kiosk/checkin', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ token: token })
+      }).then(function(r){ return r.json(); }).then(function(d){
+        msg.className = 'msg ok';
+        msg.textContent = d.already ? 'Сегодня уже отмечен' : 'Отмечено! Хорошей тренировки 🥋';
+        btn.textContent = 'Отмечено'; btn.style.opacity = .55;
+        setTimeout(function(){ reset(); show('attract'); }, 4500);
+      }).catch(function(){
+        msg.className = 'msg err'; msg.textContent = 'Не получилось. Скажите тренеру';
+        btn.disabled = false; btn.textContent = 'Отметить посещение';
+      });
+    };
+  }
+
+  /* ── чат ── */
+  var chatHistory = [], busy = false;
+  var feed = document.getElementById('feed');
+
+  function bubble(text, who, cls){
+    var d = document.createElement('div');
+    d.className = 'bub ' + who + (cls ? ' ' + cls : '');
+    d.textContent = text;
+    feed.appendChild(d);
+    feed.scrollTop = feed.scrollHeight;
+    return d;
+  }
+  function greet(){
+    bubble('Здравствуйте! Расскажу про группы, цены, расписание и что взять на первую тренировку. Спрашивайте.', 'bot');
+  }
+  function ask(text){
+    if (busy || !text.trim()) return;
+    document.getElementById('hints').style.display = 'none';
+    bubble(text, 'me');
+    chatHistory.push({ role:'user', content:text });
+    busy = true;
+    var t = bubble('печатает…', 'bot', 'typing');
+    fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ messages: chatHistory })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      t.remove();
+      var reply = (d && d.reply) ? d.reply : 'Не получилось ответить. Позвоните: +7 901 783-11-73';
+      bubble(reply, 'bot');
+      chatHistory.push({ role:'assistant', content:reply });
+    }).catch(function(){
+      t.remove();
+      bubble('Связь прервалась. Позвоните: +7 901 783-11-73', 'bot');
+    }).finally(function(){ busy = false; });
+  }
+  document.getElementById('csend').addEventListener('click', function(){
+    var i = document.getElementById('cin'); ask(i.value); i.value = '';
+  });
+  document.getElementById('cin').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { ask(this.value); this.value = ''; }
+  });
+  document.querySelectorAll('.hint').forEach(function(h){
+    h.addEventListener('click', function(){ ask(h.textContent); });
+  });
+
+  /* ── не даём экрану гаснуть, пока планшет висит на стене ── */
+  if ('wakeLock' in navigator) {
+    var lock = null;
+    var grab = function(){ navigator.wakeLock.request('screen').then(function(l){ lock = l; }).catch(function(){}); };
+    grab();
+    document.addEventListener('visibilitychange', function(){
+      if (document.visibilityState === 'visible') grab();
+    });
+  }
+
+  startPhotos();
+})();
+</script>
+</body>
+</html>

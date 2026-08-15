@@ -176,4 +176,84 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// ── КИОСК В ЗАЛЕ ─────────────────────────────────────────────────────────────
+// Планшет на стене: отметка посещения и просмотр абонемента.
+// Остаток занятий — финансовая информация, поэтому отдаём только после ввода
+// последних 4 цифр телефона родителя. Список имён на планшете и так виден всем в зале.
+
+// Опознание — только по личной карточке ребёнка (QR с уникальным токеном).
+// Списка имён на планшете нет: чужую карточку не подберёшь и чужие данные не увидишь.
+
+function tokenOf(req) {
+  return String(req.body?.token || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16);
+}
+
+async function findByToken(token) {
+  const { rows } = await pool.query(
+    `SELECT name, hall, belt, belt_date, total, left_count, abon_start, days, train_time, photo
+       FROM students WHERE kiosk_token = $1 LIMIT 1`,
+    [token]
+  );
+  return rows[0] || null;
+}
+
+// карточка ученика по токену: остаток занятий, пояс, расписание
+app.post('/api/kiosk/card', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'no_db' });
+  const token = tokenOf(req);
+  if (token.length < 6) return res.status(400).json({ error: 'bad_token' });
+  try {
+    const s = await findByToken(token);
+    if (!s) return res.status(404).json({ error: 'not_found' });
+
+    const vis = await pool.query(
+      `SELECT count(*)::int AS n FROM attendance
+        WHERE child_name = $1 AND visit_date >= CURRENT_DATE - 30`,
+      [s.name]
+    );
+    const today = await pool.query(
+      `SELECT 1 FROM attendance WHERE child_name = $1 AND visit_date = CURRENT_DATE LIMIT 1`,
+      [s.name]
+    );
+    s.visits_30 = vis.rows[0]?.n ?? 0;
+    s.checked_today = today.rowCount > 0;
+    res.json({ ok: true, student: s });
+  } catch (e) {
+    console.error('kiosk/card:', e.message);
+    res.status(500).json({ error: 'db_error' });
+  }
+});
+
+// отметка посещения по токену
+app.post('/api/kiosk/checkin', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'no_db' });
+  const token = tokenOf(req);
+  if (token.length < 6) return res.status(400).json({ error: 'bad_token' });
+  try {
+    const s = await findByToken(token);
+    if (!s) return res.status(404).json({ error: 'not_found' });
+
+    const dup = await pool.query(
+      `SELECT 1 FROM attendance WHERE child_name = $1 AND visit_date = CURRENT_DATE LIMIT 1`,
+      [s.name]
+    );
+    if (dup.rowCount) {
+      return res.json({ ok: true, already: true, name: s.name, left: s.left_count });
+    }
+    await pool.query(
+      `INSERT INTO attendance (child_name, visit_date, status) VALUES ($1, CURRENT_DATE, 'came')`,
+      [s.name]
+    );
+    const upd = await pool.query(
+      `UPDATE students SET left_count = COALESCE(left_count, 0) - 1
+        WHERE name = $1 RETURNING left_count`,
+      [s.name]
+    );
+    res.json({ ok: true, name: s.name, left: upd.rows[0]?.left_count ?? null });
+  } catch (e) {
+    console.error('kiosk/checkin:', e.message);
+    res.status(500).json({ error: 'db_error' });
+  }
+});
+
 app.listen(PORT, () => console.log(`Juma Club server on port ${PORT}`));
