@@ -1,9 +1,14 @@
 'use strict';
 
 // ── Сохраняем UTM-метки при заходе (для источника заявок) ────────────────────
+// Метки приходят не только в query: у быстрых ссылок реклама ведёт в конкретный
+// блок страницы, и площадка дописывает параметры после якоря
+// (…/#pricing?utm_source=yandex) — там их не видно в location.search.
 (function () {
   try {
-    const p = new URLSearchParams(location.search);
+    const hash = location.hash;
+    const inHash = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+    const p = new URLSearchParams(location.search + (inHash ? '&' + inHash : ''));
     const s = p.get('utm_source'), c = p.get('utm_campaign');
     if (s || c) {
       const src = [s || '', c || ''].filter(Boolean).join(' / ').slice(0, 60);
@@ -141,7 +146,7 @@ async function submitForm(form) {
         messageEl.className = 'form-message success show';
       }
       form.reset();
-      if (typeof ym     !== 'undefined') ym(window._ymId, 'reachGoal', 'lead_submitted');
+      if (typeof ym     !== 'undefined') ym(110072848, 'reachGoal', 'lead_submitted');
       if (typeof gtag   !== 'undefined') gtag('event', 'generate_lead');
       // пиксель VK Рекламы — явная цель, надёжнее автопоиска событий
       if (window._tmr) window._tmr.push({ type: 'reachGoal', id: 3785599, goal: 'lead' });
@@ -169,7 +174,7 @@ document.querySelectorAll('.signup-form').forEach(form => {
 document.querySelectorAll('[data-msg]').forEach(link => {
   link.addEventListener('click', () => {
     const via = link.dataset.msg;
-    if (typeof ym !== 'undefined') ym(window._ymId, 'reachGoal', 'messenger_click', { via });
+    if (typeof ym !== 'undefined') ym(110072848, 'reachGoal', 'messenger_click', { via });
     if (window._tmr) window._tmr.push({ type: 'reachGoal', id: 3785599, goal: 'messenger' });
   });
 });
@@ -404,7 +409,7 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
       history.push({ role: 'assistant', content: reply });
       // чат передал контакт руководителю — это тоже заявка, засчитываем в цели
       if (data && data.escalated) {
-        if (typeof ym !== 'undefined') ym(window._ymId, 'reachGoal', 'lead_submitted');
+        if (typeof ym !== 'undefined') ym(110072848, 'reachGoal', 'lead_submitted');
         if (window._tmr) window._tmr.push({ type: 'reachGoal', id: 3785599, goal: 'lead' });
       }
     } catch {
