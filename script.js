@@ -181,6 +181,31 @@ document.querySelectorAll('[data-msg]').forEach(link => {
   });
 });
 
+// ── Плавающая кнопка связи: раскрывается по тапу ────────────────────────────
+(function () {
+  const fab = document.querySelector('.msg-fab');
+  if (!fab) return;
+  const toggle = fab.querySelector('.msg-fab-toggle');
+
+  function setOpen(open) {
+    fab.dataset.open = open ? 'true' : 'false';
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  toggle.addEventListener('click', e => {
+    e.stopPropagation();
+    setOpen(fab.dataset.open !== 'true');
+  });
+
+  // клик мимо и Esc закрывают
+  document.addEventListener('click', e => {
+    if (!fab.contains(e.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') setOpen(false);
+  });
+})();
+
 // ── Расписание: вкладки залов ────────────────────────────────────────────────
 (function () {
   const tabs   = document.querySelectorAll('.hall-tab');
