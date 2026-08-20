@@ -908,14 +908,94 @@ p { font-size: 1.05rem; line-height: 1.7; }
 /* ===== SCHEDULE ===== */
 .schedule-header { margin-bottom: 48px; }
 
-.schedule-layout {
+/* — вкладки залов — */
+.hall-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  align-items: start;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.hall-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 18px;
+  background: var(--bg-alt);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--text-mid);
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+.hall-tab:hover { border-color: var(--border); }
+.hall-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hall-tab-name { font-size: 1rem; font-weight: 700; color: var(--navy); }
+.hall-tab-addr { font-size: 0.78rem; color: var(--text-light); }
+.hall-tab.is-active { background: var(--navy); border-color: var(--navy); }
+.hall-tab.is-active .hall-tab-name { color: #fff; }
+.hall-tab.is-active .hall-tab-addr { color: rgba(255,255,255,0.72); }
+
+/* — расписание выбранного зала — */
+.hall-panel[hidden] { display: none; }
+.hall-panel-addr {
+  font-size: 0.88rem;
+  color: var(--text-mid);
+  margin-bottom: 18px;
 }
 
-.schedule-groups { display: flex; flex-direction: column; gap: 16px; }
+.lessons {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.lesson {
+  display: grid;
+  grid-template-columns: 118px 132px auto 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 20px;
+  background: var(--bg);
+  transition: background 0.15s;
+}
+.lesson + .lesson { border-top: 1px solid var(--border); }
+.lesson:hover { background: var(--bg-alt); }
+.lesson-days { font-weight: 700; color: var(--navy); font-size: 0.92rem; }
+.lesson-time {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.lesson-tag {
+  justify-self: start;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 4px 11px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+.tag-junior { background: #fdf1dc; color: #8a5a12; }
+.tag-senior { background: var(--navy); color: #fff; }
+.lesson-note { font-size: 0.84rem; color: var(--text-light); }
+
+.hall-foot {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.hall-foot-note { font-size: 0.88rem; color: var(--text-light); max-width: 42ch; }
+
+.schedule-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 40px;
+}
 
 .group-card {
   display: flex;
@@ -943,25 +1023,26 @@ p { font-size: 1.05rem; line-height: 1.7; }
 .group-info h4 { font-size: 1rem; color: var(--navy); margin-bottom: 4px; }
 .group-info p { font-size: 0.88rem; color: var(--text-mid); }
 
-.schedule-halls { display: flex; flex-direction: column; gap: 20px; }
-.halls-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+/* расписание на узких экранах: строка занятия в две строки */
+@media (max-width: 720px) {
+  .hall-tabs { grid-template-columns: 1fr; gap: 8px; }
+  .hall-tab { flex-direction: row; align-items: baseline; gap: 10px; padding: 12px 16px; }
+  .hall-tab-addr { font-size: 0.76rem; }
 
-.hall-item {
-  background: var(--bg-alt);
-  border-radius: var(--radius);
-  padding: 20px 24px;
-}
-.hall-item h4 { color: var(--navy); margin-bottom: 6px; font-size: 1rem; }
-.hall-addr { font-size: 0.88rem; color: var(--text-mid); }
+  .lesson {
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+    padding: 14px 16px;
+  }
+  .lesson-days { grid-column: 1; }
+  .lesson-time { grid-column: 2; justify-self: start; }
+  .lesson-tag  { grid-column: 1 / -1; }
+  .lesson-note { grid-column: 1 / -1; margin-top: -2px; }
+  .lesson-note:empty { display: none; }
 
-.schedule-cta {
-  margin-top: 36px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  .schedule-groups { grid-template-columns: 1fr; }
+  .hall-foot { gap: 12px; }
 }
-.schedule-note { font-size: 0.88rem; color: var(--text-light); }
 
 /* ===== CONTACTS ===== */
 .contacts { background: var(--bg-alt); }

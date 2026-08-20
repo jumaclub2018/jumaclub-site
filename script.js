@@ -132,12 +132,14 @@ async function submitForm(form) {
 
   // источник заявки из UTM-меток рекламы (сохранены при заходе), иначе «сайт»
   const source = (sessionStorage.getItem('juma_src') || 'сайт');
+  // зал, если человек нажал «Записаться в этот зал» в расписании
+  const hall = (sessionStorage.getItem('juma_hall') || '');
 
   try {
     const res = await fetch('/api/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, source }),
+      body: JSON.stringify({ name, phone, source, hall }),
     });
 
     if (res.ok) {
@@ -176,6 +178,42 @@ document.querySelectorAll('[data-msg]').forEach(link => {
     const via = link.dataset.msg;
     if (typeof ym !== 'undefined') ym(110072848, 'reachGoal', 'messenger_click', { via });
     if (window._tmr) window._tmr.push({ type: 'reachGoal', id: 3785599, goal: 'messenger' });
+  });
+});
+
+// ── Расписание: вкладки залов ────────────────────────────────────────────────
+(function () {
+  const tabs   = document.querySelectorAll('.hall-tab');
+  const panels = document.querySelectorAll('.hall-panel');
+  if (!tabs.length) return;
+
+  function show(hall) {
+    tabs.forEach(t => {
+      const on = t.dataset.hall === hall;
+      t.classList.toggle('is-active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    panels.forEach(p => {
+      const on = p.dataset.hall === hall;
+      p.classList.toggle('is-active', on);
+      p.hidden = !on;
+    });
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.hall)));
+
+  // Пришёл по рекламе своего района — открываем сразу его зал.
+  // Источник лежит в juma_src с первого захода: «vk / selyatino» и т.п.
+  const src = (sessionStorage.getItem('juma_src') || '').toLowerCase();
+  if (src.includes('selyatino')) show('selyatino');
+  else if (src.includes('kommunarka') || src.includes('bunino')) show('bunino');
+})();
+
+// ── «Записаться в этот зал» — зал уезжает вместе с заявкой ───────────────────
+// Иначе в базе поле hall пустое и зал приходится выяснять по телефону
+document.querySelectorAll('.hall-signup').forEach(btn => {
+  btn.addEventListener('click', () => {
+    try { sessionStorage.setItem('juma_hall', btn.dataset.hallName || ''); } catch (e) {}
   });
 });
 
