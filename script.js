@@ -337,14 +337,14 @@ if (!prefersReduced && typeof gsap !== 'undefined') {
   });
 
   document.querySelectorAll('.stat-num').forEach(el => {
-    const raw      = el.textContent.trim();           // "100+", "4,5", "5" …
+    const raw      = el.textContent.trim();           // "100+", "4,6", "5" …
     const isFloat  = raw.includes(',');
     const numStr   = raw.replace(/[^\d,]/g, '').replace(',', '.');
     const num      = parseFloat(numStr);
     const suffix   = raw.replace(/[\d,\.]/g, '');     // "+", "" …
     if (isNaN(num)) return;
 
-    const startVal = isFloat ? num - 0.5 : 0;         // для рейтинга — от 4,0 до 4,5
+    const startVal = isFloat ? num - 0.5 : 0;         // для рейтинга — от 4,1 до 4,6
     const counter  = { val: startVal };
 
     el.textContent = isFloat
