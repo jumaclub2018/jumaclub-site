@@ -1,20 +1,52 @@
 'use strict';
 
-// ── Сохраняем UTM-метки при заходе (для источника заявок) ────────────────────
+// ── Источник заявки: UTM-метки переживают закрытие вкладки ───────────────────
 // Метки приходят не только в query: у быстрых ссылок реклама ведёт в конкретный
 // блок страницы, и площадка дописывает параметры после якоря
 // (…/#pricing?utm_source=yandex) — там их не видно в location.search.
-(function () {
+// Держим метку 30 дней в localStorage: в секцию почти никто не записывается с
+// первого захода — родитель уходит подумать и возвращается через день-другой,
+// и без этого заявка с рекламы попадала в базу как «сайт».
+const jumaSource = (function () {
+  const KEY = 'juma_src';
+  const TTL = 30 * 24 * 60 * 60 * 1000;
+
+  // localStorage может бросить на самом обращении (приватный режим, куки
+  // выключены) — поэтому собираем хранилища по одному
+  const stores = () => {
+    const out = [];
+    try { out.push(localStorage); } catch (e) {}
+    try { out.push(sessionStorage); } catch (e) {}
+    return out;
+  };
+
+  const save = (src) => {
+    const rec = JSON.stringify({ src, ts: Date.now() });
+    stores().forEach(s => { try { s.setItem(KEY, rec); } catch (e) {} });
+  };
+
+  const read = () => {
+    for (const store of stores()) {
+      try {
+        const raw = store.getItem(KEY);
+        if (!raw) continue;
+        // до этой версии в ключе лежала голая строка без даты
+        const rec = raw[0] === '{' ? JSON.parse(raw) : { src: raw, ts: Date.now() };
+        if (Date.now() - rec.ts < TTL) return rec.src || '';
+      } catch (e) {}
+    }
+    return '';
+  };
+
   try {
     const hash = location.hash;
     const inHash = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
     const p = new URLSearchParams(location.search + (inHash ? '&' + inHash : ''));
     const s = p.get('utm_source'), c = p.get('utm_campaign');
-    if (s || c) {
-      const src = [s || '', c || ''].filter(Boolean).join(' / ').slice(0, 60);
-      sessionStorage.setItem('juma_src', src);
-    }
+    if (s || c) save([s || '', c || ''].filter(Boolean).join(' / ').slice(0, 60));
   } catch (e) {}
+
+  return read;
 })();
 
 // ── Ленивая загрузка Яндекс-карт ─────────────────────────────────────────────
@@ -131,7 +163,7 @@ async function submitForm(form) {
   if (messageEl) messageEl.className = 'form-message';
 
   // источник заявки из UTM-меток рекламы (сохранены при заходе), иначе «сайт»
-  const source = (sessionStorage.getItem('juma_src') || 'сайт');
+  const source = (jumaSource() || 'сайт');
   // зал, если человек нажал «Записаться в этот зал» в расписании
   const hall = (sessionStorage.getItem('juma_hall') || '');
 
@@ -229,7 +261,7 @@ document.querySelectorAll('[data-msg]').forEach(link => {
 
   // Пришёл по рекламе своего района — открываем сразу его зал.
   // Источник лежит в juma_src с первого захода: «vk / selyatino» и т.п.
-  const src = (sessionStorage.getItem('juma_src') || '').toLowerCase();
+  const src = jumaSource().toLowerCase();
   if (src.includes('selyatino')) show('selyatino');
   else if (src.includes('kommunarka') || src.includes('bunino')) show('bunino');
 })();
