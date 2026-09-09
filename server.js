@@ -282,4 +282,72 @@ app.post('/api/kiosk/checkin', async (req, res) => {
   }
 });
 
+// ── Заявки из лид-форм ВКонтакте ─────────────────────────────────────────────
+// VK умеет слать письма на почту админа, но письма теряются: четыре заявки
+// пролежали незамеченными четыре дня. Поэтому принимаем событие напрямую и
+// шлём в телеграм тем же путём, что и заявки с сайта.
+const VK_CONFIRMATION = process.env.VK_CONFIRMATION || '';
+const VK_SECRET = process.env.VK_SECRET || '';
+
+// в ответах формы ключи стандартные, но у своих вопросов они произвольные
+function pickAnswer(answers, keys) {
+  for (const k of keys) {
+    const hit = answers.find(a => (a.key || '').toLowerCase() === k);
+    if (hit && hit.answer) return String(hit.answer).trim();
+  }
+  return '';
+}
+
+app.post('/api/vk-callback', async (req, res) => {
+  const body = req.body || {};
+
+  // подтверждение адреса при подключении Callback API
+  if (body.type === 'confirmation') {
+    return res.send(VK_CONFIRMATION);
+  }
+
+  // секрет задаётся в настройках сообщества; без него чужой мог бы слать заявки
+  if (VK_SECRET && body.secret !== VK_SECRET) {
+    console.error('vk-callback: неверный secret');
+    return res.send('ok');
+  }
+
+  // VK повторяет доставку, пока не получит «ok», поэтому отвечаем сразу,
+  // а разбираем событие уже после ответа
+  res.send('ok');
+
+  if (body.type !== 'lead_forms_new') return;
+
+  try {
+    const o = body.object || {};
+    const answers = Array.isArray(o.answers) ? o.answers : [];
+    const name = pickAnswer(answers, ['first_name', 'name', 'фамилия и имя', 'имя']) || 'Без имени';
+    const phone = pickAnswer(answers, ['phone_number', 'phone', 'телефон']);
+    const extra = answers
+      .filter(a => !['first_name', 'name', 'phone_number', 'phone', 'last_name'].includes((a.key || '').toLowerCase()))
+      .map(a => `${a.question || a.key}: ${a.answer}`)
+      .join('\n');
+
+    const form = o.form_name || '';
+    // зал вытаскиваем из названия формы: «Пробное — Апрелевка»
+    const hall = /апрелевк/i.test(form) ? 'Апрелевка'
+      : /селятин/i.test(form) ? 'Селятино'
+      : /бунино|коммунарк/i.test(form) ? 'Эко-бунино' : '';
+
+    saveLead(name, phone, 'vk / лид-форма', hall);
+
+    if (TG_TOKEN && TG_CHAT) {
+      await tgSend(
+        `🥋 Заявка из ВКонтакте!\nИмя: ${name}\nТелефон: ${phone || '—'}` +
+        (hall ? `\nЗал: ${hall}` : '') +
+        (form ? `\nФорма: ${form}` : '') +
+        (extra ? `\n${extra}` : '') +
+        `\n\nПерезвоните сегодня.`
+      );
+    }
+  } catch (e) {
+    console.error('vk-callback:', e.message);
+  }
+});
+
 app.listen(PORT, () => console.log(`Juma Club server on port ${PORT}`));
