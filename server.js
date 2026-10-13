@@ -214,6 +214,10 @@ function tokenOf(req) {
   return String(req.body?.token || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16);
 }
 
+// Сервер живёт в UTC, а тренировки идут по Москве. Без пересчёта поздняя вечерняя
+// отметка попадёт в предыдущую дату, поэтому «сегодня» для киоска всегда московское.
+const MSK_TODAY = `(now() AT TIME ZONE 'Europe/Moscow')::date`;
+
 async function findByToken(token) {
   const { rows } = await pool.query(
     `SELECT name, hall, belt, belt_date, total, left_count, abon_start, days, train_time, photo
@@ -234,11 +238,11 @@ app.post('/api/kiosk/card', async (req, res) => {
 
     const vis = await pool.query(
       `SELECT count(*)::int AS n FROM attendance
-        WHERE child_name = $1 AND visit_date >= CURRENT_DATE - 30`,
+        WHERE child_name = $1 AND visit_date >= ${MSK_TODAY} - 30`,
       [s.name]
     );
     const today = await pool.query(
-      `SELECT 1 FROM attendance WHERE child_name = $1 AND visit_date = CURRENT_DATE LIMIT 1`,
+      `SELECT 1 FROM attendance WHERE child_name = $1 AND visit_date = ${MSK_TODAY} LIMIT 1`,
       [s.name]
     );
     s.visits_30 = vis.rows[0]?.n ?? 0;
@@ -260,14 +264,14 @@ app.post('/api/kiosk/checkin', async (req, res) => {
     if (!s) return res.status(404).json({ error: 'not_found' });
 
     const dup = await pool.query(
-      `SELECT 1 FROM attendance WHERE child_name = $1 AND visit_date = CURRENT_DATE LIMIT 1`,
+      `SELECT 1 FROM attendance WHERE child_name = $1 AND visit_date = ${MSK_TODAY} LIMIT 1`,
       [s.name]
     );
     if (dup.rowCount) {
       return res.json({ ok: true, already: true, name: s.name, left: s.left_count });
     }
     await pool.query(
-      `INSERT INTO attendance (child_name, visit_date, status) VALUES ($1, CURRENT_DATE, 'came')`,
+      `INSERT INTO attendance (child_name, visit_date, status) VALUES ($1, ${MSK_TODAY}, 'came')`,
       [s.name]
     );
     const upd = await pool.query(
@@ -278,6 +282,130 @@ app.post('/api/kiosk/checkin', async (req, res) => {
     res.json({ ok: true, name: s.name, left: upd.rows[0]?.left_count ?? null });
   } catch (e) {
     console.error('kiosk/checkin:', e.message);
+    res.status(500).json({ error: 'db_error' });
+  }
+});
+
+// Расписание в базе пишут по-разному: «Вт/Чт», «Пн-Пт», «Пн,Ср,Пт» — поэтому
+// разбираем любую запись в список дней, а не сравниваем строки целиком.
+const WEEK = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const WEEK_FULL = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье'];
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+function dayList(cell) {
+  const s = String(cell || '');
+  const range = s.match(/(Пн|Вт|Ср|Чт|Пт|Сб|Вс)\s*[-–—]\s*(Пн|Вт|Ср|Чт|Пт|Сб|Вс)/);
+  if (range) {
+    const a = WEEK.indexOf(range[1]), b = WEEK.indexOf(range[2]);
+    if (a >= 0 && b >= a) return WEEK.slice(a, b + 1);
+  }
+  return WEEK.filter((d) => s.includes(d));
+}
+
+// у части учеников время записано как «С 18:30» или «Напр. 15:00» — берём часы
+function normTime(v) {
+  const m = String(v || '').match(/(\d{1,2}):(\d{2})/);
+  return m ? String(m[1]).padStart(2, '0') + ':' + m[2] : '';
+}
+function minutes(t) {
+  const m = normTime(t).match(/^(\d\d):(\d\d)$/);
+  return m ? +m[1] * 60 + +m[2] : null;
+}
+
+// В карточке ученика стоит его обычное время, но зал по дням работает по-разному:
+// в субботу в ЖК Весна тренировки в 10:00 и 11:00, а не в 18:00. Поэтому время
+// всегда берём из расписания зала, а ученика ставим в слот его группы.
+// Группу ученика узнаём по тому слоту, в чьё время он ходит в обычные дни.
+function groupOf(student, hallSlots) {
+  const t = minutes(student.train_time);
+  const exact = hallSlots.find((s) => normTime(s.time) === normTime(student.train_time));
+  if (exact) return exact.age_group;
+  if (t == null) return null;
+  let best = null, bestDiff = Infinity;
+  for (const s of hallSlots) {
+    const st = minutes(s.time);
+    if (st == null) continue;
+    const diff = Math.abs(st - t);
+    if (diff < bestDiff) { bestDiff = diff; best = s; }
+  }
+  return bestDiff <= 90 ? best.age_group : null;   // дальше 1.5 часа — это уже другая группа
+}
+
+// из нескольких сегодняшних слотов одной группы (у старших три смены) берём тот,
+// что ближе к обычному времени ученика
+function pickSlot(student, todaySlots) {
+  const mine = todaySlots.filter((s) => s.age_group === student.group);
+  if (!mine.length) return null;
+  if (mine.length === 1) return mine[0];
+  const t = minutes(student.train_time);
+  if (t == null) return mine[0];
+  const exact = mine.find((s) => normTime(s.time) === normTime(student.train_time));
+  if (exact) return exact;
+  return mine.reduce((a, b) =>
+    Math.abs(minutes(b.time) - t) < Math.abs(minutes(a.time) - t) ? b : a);
+}
+
+// расписание и состав группы на сегодня для одного зала
+app.get('/api/kiosk/today', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'no_db' });
+  const hall = String(req.query.hall || '').trim().slice(0, 60);
+  try {
+    const halls = (await pool.query(
+      `SELECT DISTINCT hall FROM schedule WHERE nullif(hall,'') IS NOT NULL ORDER BY hall`
+    )).rows.map((r) => r.hall);
+
+    const { rows: [now] } = await pool.query(
+      `SELECT ${MSK_TODAY} AS d,
+              extract(isodow FROM ${MSK_TODAY})::int AS dow,
+              extract(day FROM ${MSK_TODAY})::int AS dd,
+              extract(month FROM ${MSK_TODAY})::int AS mm`
+    );
+    const short = WEEK[now.dow - 1];
+    const date_label = WEEK_FULL[now.dow - 1] + ', ' + now.dd + ' ' + MONTHS[now.mm - 1];
+
+    if (!hall) return res.json({ ok: true, need_hall: true, halls, today: short, date_label });
+
+    const hallSlots = (await pool.query(
+      `SELECT age_group, day, time FROM schedule WHERE hall = $1`, [hall]
+    )).rows;
+    const todaySlots = hallSlots
+      .filter((r) => dayList(r.day).includes(short))
+      .sort((a, b) => (minutes(a.time) ?? 1e9) - (minutes(b.time) ?? 1e9));
+
+    const kids = (await pool.query(
+      `SELECT s.name, s.kiosk_token, s.days, s.train_time,
+              (a.child_name IS NOT NULL) AS checked
+         FROM students s
+         LEFT JOIN attendance a
+                ON a.child_name = s.name AND a.visit_date = ${MSK_TODAY}
+        WHERE s.hall = $1 AND COALESCE(s.frozen, false) = false
+        ORDER BY s.name`,
+      [hall]
+    )).rows.filter((r) => dayList(r.days).includes(short));
+
+    const slots = todaySlots.map((s) => ({
+      time: normTime(s.time),
+      time_label: String(s.time || ''),
+      group: s.age_group || '',
+      students: [],
+    }));
+    const other = [];   // кого не удалось отнести к группе — не теряем, показываем отдельно
+
+    for (const k of kids) {
+      k.group = groupOf(k, hallSlots);
+      const slot = k.group ? pickSlot(k, todaySlots) : null;
+      const row = { name: k.name, token: k.kiosk_token, checked: k.checked };
+      if (slot) slots[todaySlots.indexOf(slot)].students.push(row);
+      else other.push(row);
+    }
+    if (other.length) {
+      slots.push({ time: '', time_label: 'Время уточните у тренера', group: '', students: other });
+    }
+
+    res.json({ ok: true, hall, halls, today: short, date_label, slots });
+  } catch (e) {
+    console.error('kiosk/today:', e.message);
     res.status(500).json({ error: 'db_error' });
   }
 });

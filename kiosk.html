@@ -75,8 +75,9 @@
   /* ── 2. МЕНЮ ── */
   #menu .tiles{
     flex:1;display:grid;gap:22px;
-    grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+    grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr 1fr;
   }
+  #menu .tile.hot{grid-column:1 / -1}   /* отметиться — главное действие в зале */
   .tile{
     background:var(--card);border:1px solid var(--line);border-radius:28px;
     display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;
@@ -153,6 +154,57 @@
   .stat .sub{margin-top:8px;font-size:clamp(12px,1.4vw,15px);color:var(--muted)}
   .stat.wide{grid-column:1 / -1}
 
+  /* ── СЕГОДНЯ: расписание дня и состав группы ── */
+  .daybar{
+    display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+    margin:-10px 0 20px;flex:none;
+  }
+  .daybar .d8{font-family:'Oswald';font-weight:600;font-size:clamp(18px,2.2vw,26px);color:var(--gold);letter-spacing:.04em}
+  .daybar .hl{font-size:clamp(14px,1.6vw,18px);color:var(--muted)}
+  .daybar .sw{margin-left:auto;padding:12px 20px;border-radius:999px;background:var(--card);
+    border:1px solid var(--line);font-size:clamp(13px,1.4vw,16px);font-weight:600;color:var(--muted)}
+  .slot{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:22px 24px;margin-bottom:16px}
+  .slot .sh{display:flex;align-items:baseline;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+  .slot .tm{font-family:'Oswald';font-weight:700;font-size:clamp(24px,3vw,36px);color:var(--gold)}
+  .slot .gr{font-weight:700;font-size:clamp(14px,1.7vw,20px)}
+  .slot .cnt{margin-left:auto;font-size:clamp(13px,1.4vw,16px);color:var(--muted)}
+  .kids{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .kid{
+    display:flex;align-items:center;gap:14px;text-align:left;
+    padding:20px 22px;border-radius:18px;background:rgba(255,255,255,.08);
+    border:1px solid var(--line);font-weight:700;font-size:clamp(15px,1.7vw,20px);
+    transition:transform .12s,background .12s;
+  }
+  .kid:active{transform:scale(.97);background:rgba(255,255,255,.16)}
+  .kid .mark{
+    width:34px;height:34px;border-radius:11px;flex:none;
+    border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:19px;
+  }
+  .kid.done{background:rgba(72,199,142,.16);border-color:rgba(72,199,142,.45)}
+  .kid.done .mark{background:#48c78e;border-color:#48c78e;color:#07281b}
+  .kid.wait{opacity:.6}
+  .empty{padding:40px 24px;text-align:center;color:var(--muted);font-size:clamp(16px,1.9vw,21px);line-height:1.5}
+
+  /* ── подтверждение отметки ── */
+  .ktoast{
+    position:fixed;left:50%;bottom:40px;transform:translate(-50%,24px);
+    padding:22px 34px;border-radius:999px;background:#48c78e;color:#06251a;
+    font-weight:800;font-size:clamp(16px,1.9vw,22px);z-index:50;
+    opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease;
+    box-shadow:0 18px 50px rgba(0,0,0,.35);max-width:86vw;text-align:center;
+  }
+  .ktoast.on{opacity:1;transform:translate(-50%,0)}
+  .ktoast.bad{background:var(--accent);color:#fff}
+
+  /* ── выбор зала ── */
+  #halls .hlist{display:grid;gap:16px}
+  .hbtn{
+    background:var(--card);border:1px solid var(--line);border-radius:22px;padding:30px 32px;
+    text-align:left;font-family:'Oswald';font-weight:600;letter-spacing:.04em;
+    font-size:clamp(20px,2.6vw,30px);
+  }
+  .hbtn:active{background:rgba(255,255,255,.14)}
+
   /* ── 5. ЧАТ ── */
   #chat .body{display:flex;flex-direction:column;gap:14px}
   .bub{
@@ -181,7 +233,8 @@
   }
 
   @media (orientation:portrait){
-    #menu .tiles{grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)}
+    #menu .tiles{grid-template-columns:1fr;grid-template-rows:repeat(5,1fr)}
+    .kids{grid-template-columns:1fr 1fr}
     .tile{flex-direction:row;align-items:center;gap:24px;justify-content:flex-start}
     .tile .ico{margin:0}
     .halls{grid-template-columns:1fr}
@@ -203,7 +256,7 @@
   <div class="inner">
     <img class="logo" src="/img/logo-jc.png" alt="Juma Club" onerror="this.style.display='none'">
     <h1>ДЗЮДО И САМБО</h1>
-    <div class="sub">Апрелевка · Селятино · Эко-бунино · дети от 4 лет</div>
+    <div class="sub" id="atoday">Апрелевка · Селятино · Эко-бунино · дети от 4 лет</div>
     <div class="tap">Коснитесь экрана →</div>
   </div>
 </section>
@@ -212,10 +265,15 @@
 <section class="screen" id="menu">
   <div class="top"><h2>Чем помочь?</h2></div>
   <div class="tiles">
-    <button class="tile hot" data-go="scan">
+    <button class="tile hot" data-go="today">
+      <div class="ico">✅</div>
+      <div class="t">Отметиться</div>
+      <div class="d" id="mtoday">Найдите себя в списке группы</div>
+    </button>
+    <button class="tile" data-go="scan">
       <div class="ico">📷</div>
       <div class="t">Карточка ребёнка</div>
-      <div class="d">Отметиться и посмотреть абонемент</div>
+      <div class="d">Абонемент и пояс — по QR с карточки</div>
     </button>
     <button class="tile" data-go="chat">
       <div class="ico">💬</div>
@@ -232,6 +290,24 @@
       <div class="t">Клуб</div>
       <div class="d">События, соревнования, новости</div>
     </button>
+  </div>
+</section>
+
+<!-- ══════════ СЕГОДНЯ: СОСТАВ ГРУППЫ ══════════ -->
+<section class="screen" id="today">
+  <div class="top"><button class="back" data-go="menu">←</button><h2 id="tday">Сегодня</h2></div>
+  <div class="daybar">
+    <div class="hl" id="thall"></div>
+    <button class="sw" id="swhall">Сменить зал</button>
+  </div>
+  <div class="body" id="tslots"></div>
+</section>
+
+<!-- ══════════ ВЫБОР ЗАЛА (один раз при настройке планшета) ══════════ -->
+<section class="screen" id="halls">
+  <div class="top"><h2>В каком зале этот планшет?</h2></div>
+  <div class="body">
+    <div class="hlist" id="hlist"></div>
   </div>
 </section>
 
@@ -316,6 +392,8 @@
     if (id === 'attract') { stopIdle(); startPhotos(); }
     else { resetIdle(); stopPhotos(); }
     if (id === 'chat' && !document.getElementById('feed').children.length) greet();
+    if (id === 'today') loadToday();
+    if (id === 'halls') renderHalls();
     if (id === 'scan') startScan(); else stopScan();
   }
 
@@ -357,6 +435,134 @@
   document.querySelectorAll('[data-go]').forEach(function(b){
     b.addEventListener('click', function(){ show(b.dataset.go); });
   });
+
+  /* ── СЕГОДНЯ: расписание дня и состав группы ──
+     Планшет висит в одном зале, поэтому зал запоминаем на устройстве:
+     ?hall=… перебивает, иначе ЖК Весна. Список — только этот зал и только
+     те, у кого сегодняшний день в расписании. */
+  var HALL_KEY = 'kiosk_hall';
+  var hallParam = (location.search.match(/[?&]hall=([^&]*)/) || [])[1];
+  if (hallParam) hallParam = decodeURIComponent(hallParam);
+  var HALL = hallParam || store(HALL_KEY) || 'ЖК Весна';
+  var today = null, todayAt = 0, todayReq = null;
+
+  function store(k, v){
+    try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
+    catch (e) { return null; }
+  }
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function shortName(full){            // «Зюзюков Святослав Михайлович» → «Зюзюков Святослав»
+    var p = String(full || '').trim().split(/\s+/);
+    return p.length > 2 ? p[0] + ' ' + p[1] : String(full || '');
+  }
+  function cap(s){ s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function loadToday(force){
+    var fresh = today && (Date.now() - todayAt < 60000);
+    if (fresh && !force) { renderToday(); return Promise.resolve(today); }
+    if (todayReq) return todayReq;
+    todayReq = fetch('/api/kiosk/today?hall=' + encodeURIComponent(HALL))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d && d.ok) { today = d; todayAt = Date.now(); }
+        renderToday(); renderAttract();
+        return today;
+      })
+      .catch(function(){ renderToday(); })
+      .finally(function(){ todayReq = null; });
+    return todayReq;
+  }
+
+  function renderToday(){
+    var box = document.getElementById('tslots');
+    document.getElementById('thall').textContent = HALL;
+    document.getElementById('tday').textContent = today ? cap(today.date_label) : 'Сегодня';
+    if (!today) { box.innerHTML = '<div class="empty">Нет связи с базой.<br>Скажите тренеру — отметит вручную</div>'; return; }
+    var slots = (today.slots || []).filter(function(s){ return s.students.length || s.group; });
+    if (!slots.length) {
+      box.innerHTML = '<div class="empty">Сегодня в этом зале тренировок нет 🥋<br>До встречи на следующей!</div>';
+      return;
+    }
+    box.innerHTML = slots.map(function(s){
+      var done = s.students.filter(function(k){ return k.checked; }).length;
+      return '<div class="slot"><div class="sh">' +
+          '<div class="tm">' + esc(s.time_label || '—') + '</div>' +
+          '<div class="gr">' + esc(s.group || '') + '</div>' +
+          '<div class="cnt">' + (s.students.length
+              ? 'отмечено ' + done + ' из ' + s.students.length
+              : 'состав не заполнен') + '</div>' +
+        '</div>' +
+        (s.students.length ? '<div class="kids">' + s.students.map(function(k){
+          return '<button class="kid' + (k.checked ? ' done' : '') + '" data-token="' + esc(k.token) + '">' +
+            '<span class="mark">' + (k.checked ? '✓' : '') + '</span>' +
+            '<span>' + esc(shortName(k.name)) + '</span></button>';
+        }).join('') + '</div>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  // на заставке и в меню сразу видно, что и когда сегодня
+  function renderAttract(){
+    var a = document.getElementById('atoday'), m = document.getElementById('mtoday');
+    if (!today) return;
+    var times = (today.slots || []).filter(function(s){ return s.time; }).map(function(s){ return s.time; });
+    var line = times.length
+      ? HALL + ' · ' + today.date_label + ' · ' + times.join(' · ')
+      : HALL + ' · ' + today.date_label + ' · сегодня тренировок нет';
+    if (a) a.textContent = line;
+    if (m) m.textContent = times.length ? 'Найдите себя в списке группы' : 'Сегодня тренировок нет';
+  }
+
+  function toast(text, bad){
+    var t = document.getElementById('ktoast');
+    if (!t) { t = document.createElement('div'); t.id = 'ktoast'; t.className = 'ktoast'; document.body.appendChild(t); }
+    t.textContent = text;
+    t.className = 'ktoast on' + (bad ? ' bad' : '');
+    clearTimeout(toast.tm);
+    toast.tm = setTimeout(function(){ t.className = 'ktoast'; }, 3200);
+  }
+
+  document.getElementById('tslots').addEventListener('click', function(e){
+    var btn = e.target.closest ? e.target.closest('.kid') : null;
+    if (!btn || btn.classList.contains('wait')) return;
+    var token = btn.dataset.token;
+    if (btn.classList.contains('done')) { toast('Уже отмечен сегодня'); return; }
+    btn.classList.add('wait');
+    fetch('/api/kiosk/checkin', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token: token })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (!d || !d.ok) throw 0;
+      (today.slots || []).forEach(function(s){
+        s.students.forEach(function(k){ if (k.token === token) k.checked = true; });
+      });
+      renderToday();
+      toast(d.already ? 'Уже отмечен сегодня' : shortName(d.name) + ' — отмечен. Хорошей тренировки 🥋');
+    }).catch(function(){
+      btn.classList.remove('wait');
+      toast('Не получилось отметить. Скажите тренеру', true);
+    });
+  });
+
+  document.getElementById('swhall').addEventListener('click', function(){ show('halls'); });
+  document.getElementById('hlist').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('.hbtn') : null;
+    if (!b) return;
+    HALL = b.dataset.hall;
+    store(HALL_KEY, HALL);
+    today = null;
+    show('today');
+  });
+  function renderHalls(){
+    var list = (today && today.halls && today.halls.length)
+      ? today.halls : ['ЖК Весна', 'Селятино', 'Эко Бунино'];
+    document.getElementById('hlist').innerHTML = list.map(function(h){
+      return '<button class="hbtn" data-hall="' + esc(h) + '">' + esc(h) + '</button>';
+    }).join('');
+  }
 
   /* ── СКАНЕР QR ── */
   var stream = null, scanLoop = null, canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', {willReadFrequently:true});
@@ -414,7 +620,8 @@
 
   function renderCard(s, token){
     document.getElementById('cname').textContent = s.name;
-    var left = (s.left_count == null) ? 0 : s.left_count;
+    // у части абонементов остаток ушёл в минус — родителям показываем ноль, а не «−13»
+    var left = (s.left_count == null) ? 0 : Math.max(0, s.left_count);
     var cls = left <= 0 ? 'warn' : (left <= 2 ? 'warn' : 'good');
     var payHint = left <= 0 ? 'Абонемент закончился — пора продлить'
                 : left <= 2 ? 'Скоро продлевать абонемент' : 'Всё в порядке';
@@ -516,6 +723,13 @@
   }
 
   startPhotos();
+  // #today — чтобы при настройке планшета сразу открыть нужный экран
+  if (location.hash && document.getElementById(location.hash.slice(1))) show(location.hash.slice(1));
+
+  // планшет не перезагружают месяцами: подтягиваем день заново, чтобы после
+  // полуночи сами сменились и дни, и время, и состав группы
+  loadToday(true);
+  setInterval(function(){ loadToday(true); }, 10 * 60 * 1000);
 })();
 </script>
 </body>
