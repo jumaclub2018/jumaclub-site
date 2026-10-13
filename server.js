@@ -346,6 +346,26 @@ function pickSlot(student, todaySlots) {
     Math.abs(minutes(b.time) - t) < Math.abs(minutes(a.time) - t) ? b : a);
 }
 
+// Фото лежат в базе как data:image/...;base64 по 30–90 КБ. В списке группы их
+// может быть под сотню, поэтому отдаём отдельным запросом и разрешаем кешировать.
+app.get('/api/kiosk/photo', async (req, res) => {
+  if (!pool) return res.sendStatus(503);
+  const token = String(req.query.token || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16);
+  if (token.length < 6) return res.sendStatus(400);
+  try {
+    const { rows } = await pool.query(
+      `SELECT photo FROM students WHERE kiosk_token = $1 LIMIT 1`, [token]
+    );
+    const m = String(rows[0]?.photo || '').match(/^data:(image\/[a-z+]+);base64,(.+)$/i);
+    if (!m) return res.sendStatus(404);
+    res.set('Cache-Control', 'private, max-age=86400');
+    res.type(m[1]).send(Buffer.from(m[2], 'base64'));
+  } catch (e) {
+    console.error('kiosk/photo:', e.message);
+    res.sendStatus(500);
+  }
+});
+
 // расписание и состав группы на сегодня для одного зала
 app.get('/api/kiosk/today', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'no_db' });
@@ -375,6 +395,7 @@ app.get('/api/kiosk/today', async (req, res) => {
 
     const kids = (await pool.query(
       `SELECT s.name, s.kiosk_token, s.days, s.train_time,
+              (nullif(s.photo,'') IS NOT NULL) AS has_photo,
               (a.child_name IS NOT NULL) AS checked
          FROM students s
          LEFT JOIN attendance a
@@ -395,7 +416,7 @@ app.get('/api/kiosk/today', async (req, res) => {
     for (const k of kids) {
       k.group = groupOf(k, hallSlots);
       const slot = k.group ? pickSlot(k, todaySlots) : null;
-      const row = { name: k.name, token: k.kiosk_token, checked: k.checked };
+      const row = { name: k.name, token: k.kiosk_token, checked: k.checked, photo: k.has_photo };
       if (slot) slots[todaySlots.indexOf(slot)].students.push(row);
       else other.push(row);
     }

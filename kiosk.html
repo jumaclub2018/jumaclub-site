@@ -168,16 +168,23 @@
   .slot .tm{font-family:'Oswald';font-weight:700;font-size:clamp(24px,3vw,36px);color:var(--gold)}
   .slot .gr{font-weight:700;font-size:clamp(14px,1.7vw,20px)}
   .slot .cnt{margin-left:auto;font-size:clamp(13px,1.4vw,16px);color:var(--muted)}
-  .kids{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .kids{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
   .kid{
-    display:flex;align-items:center;gap:14px;text-align:left;
-    padding:20px 22px;border-radius:18px;background:rgba(255,255,255,.08);
-    border:1px solid var(--line);font-weight:700;font-size:clamp(15px,1.7vw,20px);
+    display:flex;align-items:center;gap:13px;text-align:left;
+    padding:16px 18px;border-radius:18px;background:rgba(255,255,255,.08);
+    border:1px solid var(--line);font-weight:700;font-size:clamp(14px,1.5vw,18px);
     transition:transform .12s,background .12s;
   }
   .kid:active{transform:scale(.97);background:rgba(255,255,255,.16)}
+  .kid .ava{
+    width:56px;height:56px;border-radius:16px;flex:none;object-fit:cover;
+    background:rgba(255,255,255,.10);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Oswald';font-weight:600;font-size:19px;color:var(--muted);
+  }
+  .kid .nm{flex:1;min-width:0;line-height:1.25;overflow-wrap:anywhere}
   .kid .mark{
-    width:34px;height:34px;border-radius:11px;flex:none;
+    width:30px;height:30px;border-radius:10px;flex:none;
     border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:19px;
   }
   .kid.done{background:rgba(72,199,142,.16);border-color:rgba(72,199,142,.45)}
@@ -377,6 +384,18 @@
   </div>
 </section>
 
+<!-- Планшет висит на стене без консоли: если что-то упадёт, пусть ошибка будет видна
+     прямо на экране, а не белая страница, о которой нечего рассказать. -->
+<script>
+window.addEventListener('error', function(e){
+  var b = document.createElement('div');
+  b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;padding:16px 20px;'
+    + 'background:#e8372a;color:#fff;font:600 15px/1.4 -apple-system,sans-serif;max-height:40%;overflow:auto';
+  b.textContent = 'Ошибка: ' + (e.message || e.type)
+    + (e.filename ? ' · ' + String(e.filename).split('/').pop() + ':' + e.lineno : '');
+  (document.body || document.documentElement).appendChild(b);
+}, true);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 (function(){
@@ -459,6 +478,10 @@
     return p.length > 2 ? p[0] + ' ' + p[1] : String(full || '');
   }
   function cap(s){ s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function initials(full){
+    var p = String(full || '').trim().split(/\s+/);
+    return ((p[0] || '').charAt(0) + (p[1] || '').charAt(0)).toUpperCase();
+  }
 
   function loadToday(force){
     var fresh = today && (Date.now() - todayAt < 60000);
@@ -496,9 +519,13 @@
               : 'состав не заполнен') + '</div>' +
         '</div>' +
         (s.students.length ? '<div class="kids">' + s.students.map(function(k){
+          // у кого есть фото — показываем его, остальным инициалы: так себя находят быстрее
+          var ava = k.photo
+            ? '<img class="ava" loading="lazy" src="/api/kiosk/photo?token=' + esc(k.token) + '" alt="">'
+            : '<span class="ava">' + esc(initials(k.name)) + '</span>';
           return '<button class="kid' + (k.checked ? ' done' : '') + '" data-token="' + esc(k.token) + '">' +
-            '<span class="mark">' + (k.checked ? '✓' : '') + '</span>' +
-            '<span>' + esc(shortName(k.name)) + '</span></button>';
+            ava + '<span class="nm">' + esc(shortName(k.name)) + '</span>' +
+            '<span class="mark">' + (k.checked ? '✓' : '') + '</span></button>';
         }).join('') + '</div>' : '') +
       '</div>';
     }).join('');
