@@ -384,17 +384,40 @@
   </div>
 </section>
 
-<!-- Планшет висит на стене без консоли: если что-то упадёт, пусть ошибка будет видна
-     прямо на экране, а не белая страница, о которой нечего рассказать. -->
+<!-- Планшет висит на стене без консоли: если упадёт сам скрипт, ошибку надо увидеть.
+     А вот не загрузившееся фото или шрифт — не повод пугать родителей красной полосой:
+     такие события приходят без текста, и баннер писал голое «error» на каждое из них. -->
 <script>
+window.__kioskErrors = [];   // копим молча: если понадобится, видно через #debug
+
+function kioskShowError(text){
+  var b = document.getElementById('kiosk-err');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'kiosk-err';
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;padding:16px 20px;'
+      + 'background:#e8372a;color:#fff;font:600 15px/1.4 -apple-system,sans-serif;max-height:40%;overflow:auto';
+    (document.body || document.documentElement).appendChild(b);
+  }
+  b.textContent = 'Ошибка: ' + text;
+  clearTimeout(kioskShowError.tm);
+  kioskShowError.tm = setTimeout(function(){ b.remove(); }, 12000);
+}
+
 window.addEventListener('error', function(e){
-  var b = document.createElement('div');
-  b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;padding:16px 20px;'
-    + 'background:#e8372a;color:#fff;font:600 15px/1.4 -apple-system,sans-serif;max-height:40%;overflow:auto';
-  b.textContent = 'Ошибка: ' + (e.message || e.type)
-    + (e.filename ? ' · ' + String(e.filename).split('/').pop() + ':' + e.lineno : '');
-  (document.body || document.documentElement).appendChild(b);
+  // сбой загрузки картинки/скрипта приходит без message и с target-элементом
+  if (!e.message && e.target && e.target !== window) {
+    var src = e.target.src || e.target.href || e.target.tagName;
+    window.__kioskErrors.push('не загрузилось: ' + src);
+    return;
+  }
+  window.__kioskErrors.push(e.message);
+  kioskShowError(e.message + (e.filename ? ' · ' + String(e.filename).split('/').pop() + ':' + e.lineno : ''));
 }, true);
+
+window.addEventListener('unhandledrejection', function(e){
+  window.__kioskErrors.push('promise: ' + e.reason);
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
@@ -752,6 +775,23 @@ window.addEventListener('error', function(e){
   startPhotos();
   // #today — чтобы при настройке планшета сразу открыть нужный экран
   if (location.hash && document.getElementById(location.hash.slice(1))) show(location.hash.slice(1));
+
+  // #debug — показать, что не загрузилось. Нужно, когда планшет на стене и консоли нет.
+  if (location.hash === '#debug') {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:1000;background:#0b1424;color:#fff;'
+      + 'padding:28px;font:500 15px/1.5 -apple-system,monospace;overflow:auto;white-space:pre-wrap';
+    setTimeout(function(){
+      var list = window.__kioskErrors || [];
+      d.textContent = 'Ошибок: ' + list.length + '\n\n' + (list.join('\n') || 'нет — всё загрузилось')
+        + '\n\njsQR: ' + (typeof jsQR === 'function' ? 'работает' : 'НЕ ЗАГРУЗИЛСЯ')
+        + '\nзал: ' + HALL
+        + '\n\n(коснитесь, чтобы закрыть)';
+    }, 2500);
+    d.textContent = 'Собираю…';
+    d.addEventListener('click', function(){ d.remove(); });
+    document.body.appendChild(d);
+  }
 
   // планшет не перезагружают месяцами: подтягиваем день заново, чтобы после
   // полуночи сами сменились и дни, и время, и состав группы
